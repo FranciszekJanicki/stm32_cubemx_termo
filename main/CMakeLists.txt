@@ -4,10 +4,12 @@ target_sources(main PRIVATE
     main.c
     syscalls.c
     sysmem.c
+    callbacks.c
 )
 
 target_link_libraries(main PRIVATE
     stm32cubemx
+    termo
 )
 
 target_compile_options(main PUBLIC

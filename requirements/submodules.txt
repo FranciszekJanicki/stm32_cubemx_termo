@@ -1,0 +1,2 @@
+git@github.com:FranciszekJanicki/mcp9808.git submodules/mcp9808
+git@github.com:FranciszekJanicki/sh1107.git submodules/sh1107

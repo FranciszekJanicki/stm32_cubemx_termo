@@ -1,0 +1,6 @@
+[submodule "submodules/mcp9808"]
+	path = submodules/mcp9808
+	url = git@github.com:FranciszekJanicki/mcp9808.git
+[submodule "submodules/sh1107"]
+	path = submodules/sh1107
+	url = git@github.com:FranciszekJanicki/sh1107.git
