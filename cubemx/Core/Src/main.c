@@ -20,6 +20,7 @@
 #include "main.h"
 #include "cmsis_os.h"
 #include "i2c.h"
+#include "tim.h"
 #include "usart.h"
 #include "gpio.h"
 
@@ -127,7 +128,6 @@ void SystemClock_Config(void)
   * @param  htim : TIM handle
   * @retval None
   */
-
 /**
   * @brief  This function is executed in case of error occurrence.
   * @retval None

@@ -10,10 +10,17 @@
 typedef struct {
     I2C_HandleTypeDef* mcp9808_i2c_bus;
     uint16_t mcp9808_i2c_address;
+    TIM_HandleTypeDef* delta_timer;
 } control_config_t;
 
 typedef struct {
     mcp9808_t mcp9808;
+    control_config_t config;
+
+    bool is_running;
+    float reference;
+    float measurement;
+    float delta_time;
 } control_manager_t;
 
 termo_err_t control_manager_initialize(control_manager_t* manager,

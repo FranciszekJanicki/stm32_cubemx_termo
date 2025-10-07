@@ -29,10 +29,10 @@ typedef struct {
 
 #define PACKET_IN_SIZE (PACKET_IN_TYPE_SIZE + PACKET_IN_PAYLOAD_SIZE)
 
-void packet_in_encode(packet_in_t const* packet,
+bool packet_in_encode(packet_in_t const* packet,
                       uint8_t (*buffer)[PACKET_IN_SIZE]);
 
-void packet_in_decode(const uint8_t (*buffer)[PACKET_IN_SIZE],
+bool packet_in_decode(const uint8_t (*buffer)[PACKET_IN_SIZE],
                       packet_in_t* packet);
 
 #endif // COMMON_PACKET_IN_H

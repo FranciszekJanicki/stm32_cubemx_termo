@@ -2,6 +2,8 @@
 #include "termo_common.h"
 #include <string.h>
 
+#ifdef USE_BINARY_PACKETS
+
 static inline void packet_in_type_encode(packet_in_type_t type, uint8_t* buffer)
 {
     buffer[0] = (type >> 24U) & 0xFFU;
@@ -44,17 +46,20 @@ static inline void packet_in_payload_encode(packet_in_type_t type,
     }
 }
 
-void packet_in_encode(packet_in_t const* packet,
+bool packet_in_encode(packet_in_t const* packet,
                       uint8_t (*buffer)[PACKET_IN_SIZE])
 {
-    TERMO_ASSERT(packet != NULL);
-    TERMO_ASSERT(buffer != NULL);
+    if (packet == NULL || buffer == NULL) {
+        return false;
+    }
 
     uint8_t* type_buffer = *buffer + PACKET_IN_TYPE_OFFSET;
     packet_in_type_encode(packet->type, type_buffer);
 
     uint8_t* payload_buffer = type_buffer + PACKET_IN_PAYLOAD_OFFSET;
     packet_in_payload_encode(packet->type, &packet->payload, payload_buffer);
+
+    return true;
 }
 
 static inline void packet_in_type_decode(uint8_t const* buffer,
@@ -98,12 +103,125 @@ static inline void packet_in_payload_decode(uint8_t const* buffer,
     }
 }
 
-void packet_in_decode(const uint8_t (*buffer)[PACKET_IN_SIZE],
+bool packet_in_decode(const uint8_t (*buffer)[PACKET_IN_SIZE],
                       packet_in_t* packet)
 {
+    if (buffer == NULL || packet == NULL) {
+        return false;
+    }
+
     uint8_t const* type_buffer = *buffer + PACKET_IN_TYPE_OFFSET;
     packet_in_type_decode(type_buffer, &packet->type);
 
     uint8_t const* payload_buffer = type_buffer + PACKET_IN_PAYLOAD_OFFSET;
     packet_in_payload_decode(payload_buffer, packet->type, &packet->payload);
+
+    return true;
 }
+
+#else
+
+bool packet_in_encode(packet_in_t const* packet,
+                      uint8_t (*buffer)[PACKET_IN_SIZE])
+{
+    if (packet == NULL || buffer == NULL) {
+        return false;
+    }
+
+    char* buf = (char*)buffer;
+    size_t buf_len = PACKET_IN_SIZE;
+    size_t used_len = 0UL;
+
+    int written_len =
+        snprintf(buf + used_len, buf_len - used_len, "{\n", packet->type);
+    if (written_len < 0) {
+        return false;
+    }
+
+    used_len += (size_t)written_len;
+    if (used_len >= buf_len) {
+        return false;
+    }
+
+    written_len = snprintf(buf + used_len,
+                           buf_len - used_len,
+                           "packet_type: %d\n",
+                           packet->type);
+    if (written_len < 0) {
+        return false;
+    }
+
+    used_len += (size_t)written_len;
+    if (used_len >= buf_len) {
+        return false;
+    }
+
+    if (packet->type == PACKET_IN_TYPE_REFERENCE) {
+        written_len = snprintf(buf + used_len,
+                               buf_len - used_len,
+                               "  \"packet_payload_reference\": {\n"
+                               "    \"temperature\": %.2f,\n"
+                               "    \"sampling_time\": %.2f\n"
+                               "  }\n",
+                               packet->payload.reference.temperature,
+                               packet->payload.reference.sampling_time);
+    }
+    if (written_len < 0) {
+        return false;
+    }
+
+    used_len += (size_t)written_len;
+    if (used_len >= buf_len) {
+        return false;
+    }
+
+    written_len =
+        snprintf(buf + used_len, buf_len - used_len, "}\n", packet->type);
+    if (written_len < 0) {
+        return false;
+    }
+
+    used_len += (size_t)written_len;
+    if (used_len >= buf_len) {
+        return false;
+    }
+
+    buf[used_len] = '\0';
+    return true;
+}
+
+bool packet_in_decode(const uint8_t (*buffer)[PACKET_IN_SIZE],
+                      packet_in_t* packet)
+{
+    if (buffer == NULL || packet == NULL) {
+        return false;
+    }
+
+    char const* buf = (char const*)buffer;
+
+    int type;
+    int scanned_len = sscanf(buf, "{%*[^:]: %d", &type);
+    if (scanned_len != 1) {
+        return false;
+    }
+    packet->type = (packet_in_type_t)type;
+
+    if (packet->type == PACKET_IN_TYPE_REFERENCE) {
+        float temperature = 0.0F;
+        float sampling_time = 0.0F;
+        scanned_len =
+            sscanf(buf,
+                   "%*[^t]temperature\": %f,%*[^s]sampling_time\": %f",
+                   &temperature,
+                   &sampling_time);
+        if (scanned_len != 2) {
+            return false;
+        }
+        packet->payload.reference.temperature = temperature;
+        packet->payload.reference.sampling_time = sampling_time;
+    }
+
+    return true;
+}
+
+#endif

@@ -1,3 +1,4 @@
 git@github.com:FranciszekJanicki/mcp9808.git submodules/mcp9808
 git@github.com:FranciszekJanicki/sh1107.git submodules/sh1107
 git@github.com:FranciszekJanicki/handle_manager.git submodules/handle_manager
+git@github.com:FranciszekJanicki/pid_regulator.git submodules/pid_regulator
