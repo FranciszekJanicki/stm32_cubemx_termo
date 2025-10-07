@@ -4,3 +4,6 @@
 [submodule "submodules/sh1107"]
 	path = submodules/sh1107
 	url = git@github.com:FranciszekJanicki/sh1107.git
+[submodule "submodules/handle_manager"]
+	path = submodules/handle_manager
+	url = git@github.com:FranciszekJanicki/handle_manager.git

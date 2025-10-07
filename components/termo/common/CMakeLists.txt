@@ -2,10 +2,16 @@ add_library(common STATIC)
 
 target_sources(common PRIVATE 
     termo_log.c
+    termo_manager.c
 )
 
 target_include_directories(common PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+target_link_libraries(common PUBLIC
+    handle_manager
+    stm32cubemx
 )
 
 target_compile_options(common PRIVATE

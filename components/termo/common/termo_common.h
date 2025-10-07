@@ -4,6 +4,7 @@
 #include "termo_err.h"
 #include "termo_event.h"
 #include "termo_log.h"
+#include "termo_manager.h"
 #include "termo_notify.h"
 #include "termo_utility.h"
 
