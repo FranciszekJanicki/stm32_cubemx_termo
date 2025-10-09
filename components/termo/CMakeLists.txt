@@ -1,5 +1,4 @@
 add_subdirectory(common)
-add_subdirectory(packet_task)
 add_subdirectory(display_task)
 add_subdirectory(control_task)
 add_subdirectory(system_task)
@@ -17,9 +16,8 @@ target_include_directories(termo PUBLIC
 target_link_libraries(termo PUBLIC
     common
     control_task
-    packet_task
-    system_task
     display_task
+    system_task
 )
 
 target_compile_options(termo PUBLIC

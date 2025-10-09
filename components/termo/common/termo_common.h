@@ -8,4 +8,6 @@
 #include "termo_notify.h"
 #include "termo_utility.h"
 
+#define USE_BINARY_PACKETS
+
 #endif // COMMON_TERMO_COMMON_H

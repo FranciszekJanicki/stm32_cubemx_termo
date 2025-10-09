@@ -56,7 +56,7 @@ bool packet_in_encode(packet_in_t const* packet,
     uint8_t* type_buffer = *buffer + PACKET_IN_TYPE_OFFSET;
     packet_in_type_encode(packet->type, type_buffer);
 
-    uint8_t* payload_buffer = type_buffer + PACKET_IN_PAYLOAD_OFFSET;
+    uint8_t* payload_buffer = *buffer + PACKET_IN_PAYLOAD_OFFSET;
     packet_in_payload_encode(packet->type, &packet->payload, payload_buffer);
 
     return true;
@@ -113,7 +113,7 @@ bool packet_in_decode(const uint8_t (*buffer)[PACKET_IN_SIZE],
     uint8_t const* type_buffer = *buffer + PACKET_IN_TYPE_OFFSET;
     packet_in_type_decode(type_buffer, &packet->type);
 
-    uint8_t const* payload_buffer = type_buffer + PACKET_IN_PAYLOAD_OFFSET;
+    uint8_t const* payload_buffer = *buffer + PACKET_IN_PAYLOAD_OFFSET;
     packet_in_payload_decode(payload_buffer, packet->type, &packet->payload);
 
     return true;

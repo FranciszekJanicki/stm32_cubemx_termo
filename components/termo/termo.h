@@ -3,8 +3,10 @@
 
 #include "control_task.h"
 #include "termo_common.h"
+#include "display_task.h"
 
 typedef struct {
+    display_task_ctx_t display_ctx;
     control_task_ctx_t control_ctx;
 } termo_config_t;
 

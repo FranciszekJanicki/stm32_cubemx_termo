@@ -1,18 +1,14 @@
-add_library(system_task STATIC)
+add_library(display_utility STATIC)
 
-target_sources(system_task PRIVATE 
+target_sources(display_utility PRIVATE 
+    font5x7.c
 )
 
-target_link_libraries(system_task PUBLIC
-    common
-    stm32cubemx
-)
-
-target_include_directories(system_task PUBLIC
+target_include_directories(display_utility PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
-target_compile_options(system_task PUBLIC
+target_compile_options(display_utility PUBLIC
     -std=c23
     -Wall
     -Wextra

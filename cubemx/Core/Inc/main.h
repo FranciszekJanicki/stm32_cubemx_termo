@@ -61,6 +61,12 @@ void Error_Handler(void);
 #define USART_TX_GPIO_Port GPIOA
 #define USART_RX_Pin GPIO_PIN_3
 #define USART_RX_GPIO_Port GPIOA
+#define SH1107_SLAVE_SELECT_Pin GPIO_PIN_6
+#define SH1107_SLAVE_SELECT_GPIO_Port GPIOC
+#define SH1107_CONTROL_Pin GPIO_PIN_7
+#define SH1107_CONTROL_GPIO_Port GPIOC
+#define SH1107_RESET_Pin GPIO_PIN_8
+#define SH1107_RESET_GPIO_Port GPIOC
 #define TMS_Pin GPIO_PIN_13
 #define TMS_GPIO_Port GPIOA
 #define TCK_Pin GPIO_PIN_14

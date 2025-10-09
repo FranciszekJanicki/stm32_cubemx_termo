@@ -8,4 +8,8 @@ typedef enum {
         (CONTROL_NOTIFY_TEMP_READY | CONTROL_NOTIFY_DELTA_TIMER),
 } control_notify_t;
 
+typedef enum {
+    DISPLAY_NOTIFY_ALL = (1 << 0),
+} display_notify_t;
+
 #endif // COMMON_TERMO_NOTIFY_H

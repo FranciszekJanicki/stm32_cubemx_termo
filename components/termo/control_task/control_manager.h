@@ -23,8 +23,8 @@ typedef struct {
     float delta_time;
 } control_manager_t;
 
+termo_err_t control_manager_process(control_manager_t* manager);
 termo_err_t control_manager_initialize(control_manager_t* manager,
                                        control_config_t const* config);
-termo_err_t control_manager_process(control_manager_t* manager);
 
 #endif // CONTROL_TASK_CONTROL_MANAGER_H

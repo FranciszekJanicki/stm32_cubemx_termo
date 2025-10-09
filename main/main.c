@@ -1,15 +1,24 @@
 #include "main.h"
 #include "gpio.h"
 #include "i2c.h"
+#include "spi.h"
 #include "termo.h"
 #include "tim.h"
 #include "usart.h"
 
 static termo_config_t config = {
-    .control_ctx = {
-        .config = {.delta_timer = &htim2,
-                   .mcp9808_i2c_bus = &hi2c1,
-                   .mcp9808_i2c_address = MCP9808_SLAVE_ADDRESS_A2L_A1L_A0L}}};
+    .control_ctx = {.config = {.delta_timer = &htim2,
+                               .mcp9808_i2c_bus = &hi2c1,
+                               .mcp9808_i2c_address =
+                                   MCP9808_SLAVE_ADDRESS_A2L_A1L_A0L}},
+    .display_ctx = {
+        .config = {.sh1107_spi_bus = &hspi3,
+                   .sh1107_control_gpio = SH1107_CONTROL_GPIO_Port,
+                   .sh1107_control_pin = SH1107_CONTROL_Pin,
+                   .sh1107_reset_gpio = SH1107_RESET_GPIO_Port,
+                   .sh1107_reset_pin = SH1107_RESET_Pin,
+                   .sh1107_slave_select_gpio = SH1107_SLAVE_SELECT_GPIO_Port,
+                   .sh1107_slave_select_pin = SH1107_SLAVE_SELECT_Pin}}};
 
 void SystemClock_Config(void);
 
@@ -22,6 +31,7 @@ int main(void)
     MX_USART2_UART_Init();
     MX_I2C1_Init();
     MX_TIM2_Init();
+    MX_SPI3_Init();
 
     termo_initialize(&config);
 }

@@ -31,4 +31,10 @@ typedef struct {
 
 #define PACKET_OUT_SIZE (PACKET_OUT_TYPE_SIZE + PACKET_OUT_PAYLOAD_SIZE)
 
+bool packet_out_encode(packet_out_t const* packet,
+                       uint8_t (*buffer)[PACKET_OUT_SIZE]);
+
+bool packet_out_decode(const uint8_t (*buffer)[PACKET_OUT_SIZE],
+                       packet_out_t* packet);
+
 #endif // COMMON_PACKET_OUT_H

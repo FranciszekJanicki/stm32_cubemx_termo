@@ -1,11 +1,21 @@
+add_subdirectory(display_utility)
+
 add_library(display_task STATIC)
 
 target_sources(display_task PRIVATE 
+    display_manager.c
+    display_task.c
 )
 
 target_link_libraries(display_task PUBLIC
     common
     stm32cubemx
+    sh1107
+    display_utility
+)
+
+target_include_directories(display_task PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
 target_compile_options(display_task PUBLIC

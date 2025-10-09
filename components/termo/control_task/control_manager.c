@@ -144,33 +144,6 @@ static inline bool control_manager_receive_control_event(control_event_t* event)
                          pdMS_TO_TICKS(10)) == pdPASS;
 }
 
-termo_err_t control_manager_initialize(control_manager_t* manager,
-                                       control_config_t const* config)
-{
-    TERMO_ASSERT(manager != NULL);
-    TERMO_ASSERT(config != NULL);
-
-    memset(manager, 0, sizeof(*manager));
-    memcpy(&manager->config, config, sizeof(manager->config));
-
-    if (mcp9808_initialize(
-            &manager->mcp9808,
-            &(mcp9808_config_t){.scale = mcp9808_resolution_to_scale(0x03)},
-            &(mcp9808_interface_t){.bus_user = &manager->config,
-                                   .bus_initialize = mcp9808_bus_initialize,
-                                   .bus_read_data = mcp9808_bus_read_data,
-                                   .bus_write_data = mcp9808_bus_write_data}) !=
-        MCP9808_ERR_OK) {
-        TERMO_LOG(TAG, "Failed mcp9808_initialize!");
-    }
-
-    if (mcp9808_initialize_chip(&manager->mcp9808) != MCP9808_ERR_OK) {
-        TERMO_LOG(TAG, "Failed mcp9808_initialize_chip!");
-    }
-
-    return TERMO_ERR_OK;
-}
-
 static termo_err_t control_manager_notify_delta_timer_handler(
     control_manager_t* manager)
 {
@@ -314,6 +287,35 @@ termo_err_t control_manager_process(control_manager_t* manager)
         if (control_manager_receive_control_event(&event)) {
             TERMO_RET_ON_ERR(control_manager_event_handler(manager, &event));
         }
+    }
+
+    xTaskNotify(NULL, CONTROL_NOTIFY_TEMP_READY, eSetBits);
+
+    return TERMO_ERR_OK;
+}
+
+termo_err_t control_manager_initialize(control_manager_t* manager,
+                                       control_config_t const* config)
+{
+    TERMO_ASSERT(manager != NULL);
+    TERMO_ASSERT(config != NULL);
+
+    memset(manager, 0, sizeof(*manager));
+    memcpy(&manager->config, config, sizeof(manager->config));
+
+    if (mcp9808_initialize(
+            &manager->mcp9808,
+            &(mcp9808_config_t){.scale = mcp9808_resolution_to_scale(0x03)},
+            &(mcp9808_interface_t){.bus_user = &manager->config,
+                                   .bus_initialize = mcp9808_bus_initialize,
+                                   .bus_read_data = mcp9808_bus_read_data,
+                                   .bus_write_data = mcp9808_bus_write_data}) !=
+        MCP9808_ERR_OK) {
+        TERMO_LOG(TAG, "Failed mcp9808_initialize!");
+    }
+
+    if (mcp9808_initialize_chip(&manager->mcp9808) != MCP9808_ERR_OK) {
+        TERMO_LOG(TAG, "Failed mcp9808_initialize_chip!");
     }
 
     return TERMO_ERR_OK;
