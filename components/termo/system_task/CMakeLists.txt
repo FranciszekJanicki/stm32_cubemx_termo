@@ -1,6 +1,8 @@
 add_library(system_task STATIC)
 
 target_sources(system_task PRIVATE 
+    system_manager.c
+    system_task.c
 )
 
 target_link_libraries(system_task PUBLIC

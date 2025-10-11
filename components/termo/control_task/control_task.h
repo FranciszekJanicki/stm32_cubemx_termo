@@ -10,4 +10,6 @@ typedef struct {
 
 termo_err_t control_task_initialize(control_task_ctx_t const* task_ctx);
 
+void control_task_delta_timer_callback(void);
+
 #endif // CONTROL_TASK_CONTROL_TASK_H

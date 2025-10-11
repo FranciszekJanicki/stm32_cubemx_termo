@@ -90,6 +90,16 @@ static sh1107_err_t sh1107_initialize_chip(sh1107_t* sh1107)
     return SH1107_ERR_OK;
 }
 
+static inline bool display_manager_send_system_event(
+    system_event_t const* event)
+{
+    TERMO_ASSERT(event != NULL);
+
+    return xQueueSend(termo_queue_manager_get(TERMO_QUEUE_TYPE_SYSTEM),
+                      event,
+                      pdMS_TO_TICKS(10)) == pdPASS;
+}
+
 static inline bool display_manager_receive_display_notify(
     display_notify_t* notify)
 {
@@ -250,6 +260,12 @@ termo_err_t display_manager_initialize(display_manager_t* manager,
     sh1107_draw_string(&manager->sh1107, 0, 0, "DUPA ZBITA");
     sh1107_draw_string(&manager->sh1107, 30, 30, "DUPA CIPA");
     sh1107_display_frame_buffer(&manager->sh1107);
+
+    if (!display_manager_send_system_event(
+            &(system_event_t){.type = SYSTEM_EVENT_TYPE_READY,
+                              .origin = SYSTEM_EVENT_ORIGIN_DISPLAY})) {
+        return TERMO_ERR_FAIL;
+    }
 
     return TERMO_ERR_OK;
 }

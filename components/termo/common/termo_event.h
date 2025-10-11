@@ -2,6 +2,49 @@
 #define COMMON_TERMO_EVENT_H
 
 typedef enum {
+    SYSTEM_EVENT_ORIGIN_CONTROL,
+    SYSTEM_EVENT_ORIGIN_DISPLAY,
+} system_event_origin_t;
+
+typedef enum {
+    SYSTEM_EVENT_TYPE_READY,
+    SYSTEM_EVENT_TYPE_STARTED,
+    SYSTEM_EVENT_TYPE_STOPPED,
+    SYSTEM_EVENT_TYPE_REFERENCE,
+    SYSTEM_EVENT_TYPE_MEASURE,
+} system_event_type_t;
+
+typedef struct {
+} system_event_payload_ready_t;
+typedef struct {
+} system_event_payload_started_t;
+typedef struct {
+} system_event_payload_stopped_t;
+typedef struct {
+    float temperature;
+    float sampling_time;
+} system_event_payload_reference_t;
+typedef struct {
+    float temperature;
+    float humidity;
+    float pressure;
+} system_event_payload_measure_t;
+
+typedef union {
+    system_event_payload_ready_t ready;
+    system_event_payload_started_t started;
+    system_event_payload_stopped_t stopped;
+    system_event_payload_reference_t reference;
+    system_event_payload_measure_t measure;
+} system_event_payload_t;
+
+typedef struct {
+    system_event_type_t type;
+    system_event_origin_t origin;
+    system_event_payload_t payload;
+} system_event_t;
+
+typedef enum {
     CONTROL_EVENT_TYPE_START,
     CONTROL_EVENT_TYPE_STOP,
     CONTROL_EVENT_TYPE_REFERENCE,

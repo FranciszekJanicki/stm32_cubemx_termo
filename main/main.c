@@ -7,6 +7,7 @@
 #include "usart.h"
 
 static termo_config_t config = {
+    .system_ctx = {.config = {}},
     .control_ctx = {.config = {.delta_timer = &htim2,
                                .mcp9808_i2c_bus = &hi2c1,
                                .mcp9808_i2c_address =

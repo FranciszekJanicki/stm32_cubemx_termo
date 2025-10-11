@@ -10,4 +10,6 @@ typedef enum {
     TERMO_ERR_UNKNOWN_NOTIFY,
 } termo_err_t;
 
+char const* termo_err_to_string(termo_err_t err);
+
 #endif // COMMON_TERMO_ERR_H

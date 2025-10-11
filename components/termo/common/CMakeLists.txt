@@ -3,6 +3,7 @@ add_library(common STATIC)
 target_sources(common PRIVATE 
     termo_log.c
     termo_manager.c
+    termo_err.c
 )
 
 target_include_directories(common PUBLIC

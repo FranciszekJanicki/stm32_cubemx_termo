@@ -4,12 +4,14 @@
 #include "task.h"
 
 typedef enum {
+    TERMO_TASK_TYPE_SYSTEM,
     TERMO_TASK_TYPE_CONTROL,
     TERMO_TASK_TYPE_DISPLAY,
     TERMO_TASK_TYPE_NUM,
 } termo_task_type_t;
 
 typedef enum {
+    TERMO_QUEUE_TYPE_SYSTEM,
     TERMO_QUEUE_TYPE_CONTROL,
     TERMO_QUEUE_TYPE_DISPLAY,
     TERMO_QUEUE_TYPE_NUM,

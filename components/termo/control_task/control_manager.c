@@ -12,11 +12,16 @@ static mcp9808_err_t mcp9808_bus_initialize(void* user)
     control_config_t* config = user;
 
     return HAL_I2C_IsDeviceReady(config->mcp9808_i2c_bus,
-                                 config->mcp9808_i2c_address,
+                                 config->mcp9808_i2c_address << 1U,
                                  10,
                                  100) == HAL_OK
                ? MCP9808_ERR_OK
                : MCP9808_ERR_FAIL;
+}
+
+static mcp9808_err_t mcp9808_bus_deinitialize(void* user)
+{
+    return MCP9808_ERR_OK;
 }
 
 static mcp9808_err_t mcp9808_bus_write_data(void* user,
@@ -27,7 +32,7 @@ static mcp9808_err_t mcp9808_bus_write_data(void* user,
     control_config_t* config = user;
 
     return HAL_I2C_Mem_Write(config->mcp9808_i2c_bus,
-                             config->mcp9808_i2c_address,
+                             config->mcp9808_i2c_address << 1U,
                              address,
                              I2C_MEMADD_SIZE_8BIT,
                              data,
@@ -45,7 +50,7 @@ static mcp9808_err_t mcp9808_bus_read_data(void* user,
     control_config_t* config = user;
 
     return HAL_I2C_Mem_Read(config->mcp9808_i2c_bus,
-                            config->mcp9808_i2c_address,
+                            config->mcp9808_i2c_address << 1U,
                             address,
                             I2C_MEMADD_SIZE_8BIT,
                             data,
@@ -57,23 +62,18 @@ static mcp9808_err_t mcp9808_bus_read_data(void* user,
 
 static mcp9808_err_t mcp9808_initialize_chip(mcp9808_t const* mcp9808)
 {
-    mcp9808_err_t err = MCP9808_ERR_OK;
-
     mcp9808_manufacturer_id_reg_t man_id = {0};
     mcp9808_device_id_reg_t dev_id = {0};
 
-    err |= mcp9808_get_manufacturer_id_reg(mcp9808, &man_id);
-    err |= mcp9808_get_device_id_reg(mcp9808, &dev_id);
-
-    if (err != MCP9808_ERR_OK)
-        return err;
+    mcp9808_get_manufacturer_id_reg(mcp9808, &man_id);
+    mcp9808_get_device_id_reg(mcp9808, &dev_id);
 
     if (man_id.manufacturer_id != 0x0054 || (dev_id.device_id & 0xFF) != 0x04) {
         return MCP9808_ERR_FAIL;
     }
 
     mcp9808_config_reg_t cfg = {0};
-    err |= mcp9808_get_config_reg(mcp9808, &cfg);
+    mcp9808_get_config_reg(mcp9808, &cfg);
 
     cfg.t_hyst = 0;
     cfg.shdn = 0;
@@ -86,20 +86,20 @@ static mcp9808_err_t mcp9808_initialize_chip(mcp9808_t const* mcp9808)
     cfg.alert_pol = 0;
     cfg.aler_mod = 0;
 
-    err |= mcp9808_set_config_reg(mcp9808, &cfg);
+    mcp9808_set_config_reg(mcp9808, &cfg);
 
     mcp9808_resolution_reg_t res = {.resolution = 0x03};
-    err |= mcp9808_set_resolution_reg(mcp9808, &res);
+    mcp9808_set_resolution_reg(mcp9808, &res);
 
     mcp9808_t_upper_reg_t upper = {.t_upper = 30 << 4};
     mcp9808_t_lower_reg_t lower = {.t_lower = 20 << 4};
     mcp9808_t_crit_reg_t crit = {.t_crit = 40 << 4};
 
-    err |= mcp9808_set_t_upper_reg(mcp9808, &upper);
-    err |= mcp9808_set_t_lower_reg(mcp9808, &lower);
-    err |= mcp9808_set_t_crit_reg(mcp9808, &crit);
+    mcp9808_set_t_upper_reg(mcp9808, &upper);
+    mcp9808_set_t_lower_reg(mcp9808, &lower);
+    mcp9808_set_t_crit_reg(mcp9808, &crit);
 
-    return err;
+    return MCP9808_ERR_OK;
 }
 
 float32_t mcp9808_resolution_to_scale(mcp9808_resolution_t);
@@ -116,6 +116,16 @@ static inline bool control_manager_stop_delta_timer(control_manager_t* manager)
     TERMO_ASSERT(manager != NULL);
 
     return HAL_TIM_Base_Stop_IT(manager->config.delta_timer) == HAL_OK;
+}
+
+static inline bool control_manager_send_system_event(
+    system_event_t const* event)
+{
+    TERMO_ASSERT(event != NULL);
+
+    return xQueueSend(termo_queue_manager_get(TERMO_QUEUE_TYPE_SYSTEM),
+                      event,
+                      pdMS_TO_TICKS(10)) == pdPASS;
 }
 
 static inline bool control_manager_receive_control_notify(
@@ -306,16 +316,24 @@ termo_err_t control_manager_initialize(control_manager_t* manager,
     if (mcp9808_initialize(
             &manager->mcp9808,
             &(mcp9808_config_t){.scale = mcp9808_resolution_to_scale(0x03)},
-            &(mcp9808_interface_t){.bus_user = &manager->config,
-                                   .bus_initialize = mcp9808_bus_initialize,
-                                   .bus_read_data = mcp9808_bus_read_data,
-                                   .bus_write_data = mcp9808_bus_write_data}) !=
-        MCP9808_ERR_OK) {
+            &(mcp9808_interface_t){
+                .bus_user = &manager->config,
+                .bus_initialize = mcp9808_bus_initialize,
+                .bus_deinitialize = mcp9808_bus_deinitialize,
+                .bus_read_data = mcp9808_bus_read_data,
+                .bus_write_data = mcp9808_bus_write_data,
+            }) != MCP9808_ERR_OK) {
         TERMO_LOG(TAG, "Failed mcp9808_initialize!");
     }
 
     if (mcp9808_initialize_chip(&manager->mcp9808) != MCP9808_ERR_OK) {
         TERMO_LOG(TAG, "Failed mcp9808_initialize_chip!");
+    }
+
+    if (!control_manager_send_system_event(
+            &(system_event_t){.type = SYSTEM_EVENT_TYPE_READY,
+                              .origin = SYSTEM_EVENT_ORIGIN_CONTROL})) {
+        return TERMO_ERR_FAIL;
     }
 
     return TERMO_ERR_OK;
