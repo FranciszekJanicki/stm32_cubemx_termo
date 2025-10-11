@@ -9,6 +9,7 @@ void termo_initialize(termo_config_t const* config)
     TERMO_ERR_CHECK(system_task_initialize(&config->system_ctx));
     TERMO_ERR_CHECK(control_task_initialize(&config->control_ctx));
     TERMO_ERR_CHECK(display_task_initialize(&config->display_ctx));
+    TERMO_ERR_CHECK(packet_task_initialize(&config->packet_ctx));
 
     vTaskStartScheduler();
 }

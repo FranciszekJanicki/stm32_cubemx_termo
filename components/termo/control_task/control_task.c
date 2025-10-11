@@ -19,7 +19,9 @@ static void control_task_func(void* ctx)
 
     control_manager_t manager;
     TERMO_LOG_ON_ERR(pcTaskGetName(NULL),
-                     control_manager_initialize(&manager, &task_ctx->config));
+                     control_manager_initialize(&manager,
+                                                &task_ctx->config,
+                                                &task_ctx->params));
 
     while (1) {
         TERMO_LOG_ON_ERR(pcTaskGetName(NULL),

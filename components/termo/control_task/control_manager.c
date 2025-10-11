@@ -104,6 +104,34 @@ static mcp9808_err_t mcp9808_initialize_chip(mcp9808_t const* mcp9808)
 
 float32_t mcp9808_resolution_to_scale(mcp9808_resolution_t);
 
+static inline bool control_manager_start_pwm_timer(control_manager_t* manager)
+{
+    TERMO_ASSERT(manager != NULL);
+
+    return HAL_TIM_PWM_Start(manager->config.pwm_timer,
+                             manager->config.pwm_channel) == HAL_OK;
+}
+
+static inline bool control_manager_stop_pwm_timer(control_manager_t* manager)
+{
+    TERMO_ASSERT(manager != NULL);
+
+    return HAL_TIM_PWM_Stop(manager->config.pwm_timer,
+                            manager->config.pwm_channel) == HAL_OK;
+}
+
+static inline bool control_manager_set_pwm_timer_compare(
+    control_manager_t* manager,
+    uint32_t compare)
+{
+    TERMO_ASSERT(manager != NULL);
+
+    __HAL_TIM_SET_COMPARE(manager->config.pwm_timer,
+                          manager->config.pwm_channel,
+                          compare & 0xFFFFU);
+    return true;
+}
+
 static inline bool control_manager_start_delta_timer(control_manager_t* manager)
 {
     TERMO_ASSERT(manager != NULL);
@@ -160,6 +188,40 @@ static termo_err_t control_manager_notify_delta_timer_handler(
     TERMO_LOG_FUNC(TAG);
     TERMO_ASSERT(manager != NULL);
 
+    float control_temperature;
+    float error_temperature = manager->reference - manager->measurement;
+    if (pid_regulator_get_sat_control(&manager->pid,
+                                      error_temperature,
+                                      manager->delta_time,
+                                      &control_temperature) !=
+        PID_REGULATOR_ERR_OK) {
+        TERMO_LOG(TAG, "Failed pid_regulator_get_sat_control!");
+        return TERMO_ERR_FAIL;
+    }
+
+    uint32_t compare =
+        (uint32_t)(control_temperature *
+                   (float)manager->config.pwm_timer->Init.Period /
+                   mcp9808_resolution_to_scale(0x03));
+
+    if (compare > manager->config.pwm_timer->Init.Period) {
+        compare = manager->config.pwm_timer->Init.Period;
+    } else if (compare < 0) {
+        compare = 0;
+    }
+
+    if (!control_manager_set_pwm_timer_compare(manager, compare)) {
+        return TERMO_ERR_FAIL;
+    }
+
+    TERMO_LOG(TAG,
+              "Ref: %.2fC, Meas: %.2fC, Err: %.2fC, Ctrl: %.2fC, Comp: %lu",
+              manager->reference,
+              manager->measurement,
+              error_temperature,
+              control_temperature,
+              compare);
+
     return TERMO_ERR_OK;
 }
 
@@ -193,7 +255,7 @@ static termo_err_t control_manager_notify_handler(control_manager_t* manager,
         TERMO_RET_ON_ERR(control_manager_notify_delta_timer_handler(manager));
     }
 
-    return TERMO_ERR_UNKNOWN_NOTIFY;
+    return TERMO_ERR_OK;
 }
 
 static termo_err_t control_manager_event_start_handler(
@@ -209,6 +271,16 @@ static termo_err_t control_manager_event_start_handler(
     }
 
     if (!control_manager_start_delta_timer(manager)) {
+        return TERMO_ERR_FAIL;
+    }
+
+    if (!control_manager_start_pwm_timer(manager)) {
+        return TERMO_ERR_FAIL;
+    }
+
+    if (!control_manager_send_system_event(
+            &(system_event_t){.type = SYSTEM_EVENT_TYPE_STARTED,
+                              .origin = SYSTEM_EVENT_ORIGIN_CONTROL})) {
         return TERMO_ERR_FAIL;
     }
 
@@ -233,6 +305,16 @@ static termo_err_t control_manager_event_stop_handler(
         return TERMO_ERR_FAIL;
     }
 
+    if (!control_manager_stop_pwm_timer(manager)) {
+        return TERMO_ERR_FAIL;
+    }
+
+    if (!control_manager_send_system_event(
+            &(system_event_t){.type = SYSTEM_EVENT_TYPE_STOPPED,
+                              .origin = SYSTEM_EVENT_ORIGIN_CONTROL})) {
+        return TERMO_ERR_FAIL;
+    }
+
     manager->is_running = false;
 
     return TERMO_ERR_OK;
@@ -245,11 +327,6 @@ static termo_err_t control_manager_event_reference_handler(
     TERMO_LOG_FUNC(TAG);
     TERMO_ASSERT(manager != NULL);
     TERMO_ASSERT(reference != NULL);
-
-    if (manager->reference == reference->temperature ||
-        manager->delta_time == reference->sampling_period) {
-        return TERMO_ERR_OK;
-    }
 
     manager->delta_time = reference->sampling_period;
     manager->reference = reference->temperature;
@@ -299,19 +376,26 @@ termo_err_t control_manager_process(control_manager_t* manager)
         }
     }
 
-    xTaskNotify(NULL, CONTROL_NOTIFY_TEMP_READY, eSetBits);
+    xTaskNotify(termo_task_manager_get(TERMO_TASK_TYPE_CONTROL),
+                CONTROL_NOTIFY_TEMP_READY,
+                eSetBits);
 
     return TERMO_ERR_OK;
 }
 
 termo_err_t control_manager_initialize(control_manager_t* manager,
-                                       control_config_t const* config)
+                                       control_config_t const* config,
+                                       control_params_t const* params)
 {
     TERMO_ASSERT(manager != NULL);
     TERMO_ASSERT(config != NULL);
+    TERMO_ASSERT(params != NULL);
 
-    memset(manager, 0, sizeof(*manager));
-    memcpy(&manager->config, config, sizeof(manager->config));
+    manager->is_running = false;
+    manager->delta_time = 0.0F;
+    manager->reference = 0.0F;
+    manager->measurement = 0.0F;
+    manager->config = *config;
 
     if (mcp9808_initialize(
             &manager->mcp9808,
@@ -328,6 +412,19 @@ termo_err_t control_manager_initialize(control_manager_t* manager,
 
     if (mcp9808_initialize_chip(&manager->mcp9808) != MCP9808_ERR_OK) {
         TERMO_LOG(TAG, "Failed mcp9808_initialize_chip!");
+    }
+
+    if (pid_regulator_initialize(
+            &manager->pid,
+            &(pid_regulator_config_t){.prop_gain = params->kp,
+                                      .int_gain = params->ki,
+                                      .dot_gain = params->kd,
+                                      .min_control = params->min_temp,
+                                      .max_control = params->max_temp,
+                                      .sat_gain = params->kc,
+                                      .dead_error = 0.0F}) !=
+        PID_REGULATOR_ERR_OK) {
+        TERMO_LOG(TAG, "Failed pid_regulator_initialize!");
     }
 
     if (!control_manager_send_system_event(

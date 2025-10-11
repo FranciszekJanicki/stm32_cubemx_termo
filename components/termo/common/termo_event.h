@@ -4,6 +4,7 @@
 typedef enum {
     SYSTEM_EVENT_ORIGIN_CONTROL,
     SYSTEM_EVENT_ORIGIN_DISPLAY,
+    SYSTEM_EVENT_ORIGIN_PACKET,
 } system_event_origin_t;
 
 typedef enum {
@@ -102,5 +103,32 @@ typedef struct {
     display_event_type_t type;
     display_event_payload_t payload;
 } display_event_t;
+
+typedef enum {
+    PACKET_EVENT_TYPE_START,
+    PACKET_EVENT_TYPE_STOP,
+    PACKET_EVENT_TYPE_MEASURE,
+} packet_event_type_t;
+
+typedef struct {
+} packet_event_payload_start_t;
+typedef struct {
+} packet_event_payload_stop_t;
+typedef struct {
+    float temperature;
+    float humidity;
+    float pressure;
+} packet_event_payload_measure_t;
+
+typedef union {
+    packet_event_payload_start_t start;
+    packet_event_payload_stop_t stop;
+    packet_event_payload_measure_t measure;
+} packet_event_payload_t;
+
+typedef struct {
+    packet_event_type_t type;
+    packet_event_payload_t payload;
+} packet_event_t;
 
 #endif // COMMON_TERMO_EVENT_H

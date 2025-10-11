@@ -3,11 +3,17 @@ add_library(packet_task STATIC)
 target_sources(packet_task PRIVATE 
     packet_in.c
     packet_out.c
+    packet_task.c
+    packet_manager.c
 )
 
 target_link_libraries(packet_task PUBLIC
     common
     stm32cubemx
+)
+
+target_include_directories(packet_task PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
 target_compile_options(packet_task PUBLIC

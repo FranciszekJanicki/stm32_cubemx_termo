@@ -52,6 +52,13 @@ QueueHandle_t system_task_create_system_queue()
                               &system_queue_buffer);
 }
 
+SemaphoreHandle_t system_task_create_log_semaphore()
+{
+    static StaticSemaphore_t log_semaphore_buffer;
+
+    return xSemaphoreCreateMutexStatic(&log_semaphore_buffer);
+}
+
 termo_err_t system_task_initialize(system_task_ctx_t const* task_ctx)
 {
     TERMO_ASSERT(task_ctx != NULL);
@@ -67,6 +74,12 @@ termo_err_t system_task_initialize(system_task_ctx_t const* task_ctx)
         return TERMO_ERR_FAIL;
     }
     termo_queue_manager_set(TERMO_QUEUE_TYPE_SYSTEM, system_queue);
+
+    SemaphoreHandle_t log_semaphore = system_task_create_log_semaphore();
+    if (log_semaphore == NULL) {
+        return TERMO_ERR_FAIL;
+    }
+    termo_semaphore_manager_set(TERMO_SEMAPHORE_TYPE_LOG, log_semaphore);
 
     return TERMO_ERR_OK;
 }

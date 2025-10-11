@@ -12,6 +12,7 @@ target_include_directories(control_task PUBLIC
 target_link_libraries(control_task PUBLIC
     common
     mcp9808
+    pid_regulator
     stm32cubemx
 )
 

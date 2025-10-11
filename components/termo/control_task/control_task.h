@@ -6,6 +6,7 @@
 
 typedef struct {
     control_config_t config;
+    control_params_t params;
 } control_task_ctx_t;
 
 termo_err_t control_task_initialize(control_task_ctx_t const* task_ctx);

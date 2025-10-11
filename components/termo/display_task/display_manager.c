@@ -114,14 +114,14 @@ static inline bool display_manager_receive_display_notify(
 static inline bool display_manager_has_display_event(void)
 {
     return uxQueueMessagesWaiting(
-               termo_queue_manager_get(TERMO_QUEUE_TYPE_CONTROL)) > 0UL;
+               termo_queue_manager_get(TERMO_QUEUE_TYPE_DISPLAY)) > 0UL;
 }
 
 static inline bool display_manager_receive_display_event(display_event_t* event)
 {
     TERMO_ASSERT(event != NULL);
 
-    return xQueueReceive(termo_queue_manager_get(TERMO_QUEUE_TYPE_CONTROL),
+    return xQueueReceive(termo_queue_manager_get(TERMO_QUEUE_TYPE_DISPLAY),
                          event,
                          pdMS_TO_TICKS(10)) == pdPASS;
 }
@@ -131,7 +131,7 @@ static termo_err_t display_manager_notify_handler(display_manager_t* manager,
 {
     TERMO_ASSERT(manager != NULL);
 
-    return TERMO_ERR_UNKNOWN_NOTIFY;
+    return TERMO_ERR_OK;
 }
 
 static termo_err_t display_manager_event_start_handler(
@@ -144,6 +144,12 @@ static termo_err_t display_manager_event_start_handler(
 
     if (manager->is_running) {
         return TERMO_ERR_ALREADY_RUNNING;
+    }
+
+    if (!display_manager_send_system_event(
+            &(system_event_t){.type = SYSTEM_EVENT_TYPE_STARTED,
+                              .origin = SYSTEM_EVENT_ORIGIN_DISPLAY})) {
+        return TERMO_ERR_FAIL;
     }
 
     manager->is_running = true;
@@ -163,6 +169,12 @@ static termo_err_t display_manager_event_stop_handler(
         return TERMO_ERR_NOT_RUNNING;
     }
 
+    if (!display_manager_send_system_event(
+            &(system_event_t){.type = SYSTEM_EVENT_TYPE_STOPPED,
+                              .origin = SYSTEM_EVENT_ORIGIN_DISPLAY})) {
+        return TERMO_ERR_FAIL;
+    }
+
     manager->is_running = false;
 
     return TERMO_ERR_OK;
@@ -175,6 +187,34 @@ static termo_err_t display_manager_event_reference_handler(
     TERMO_LOG_FUNC(TAG);
     TERMO_ASSERT(manager != NULL);
     TERMO_ASSERT(reference != NULL);
+
+    sh1107_draw_string_formatted(
+        &manager->sh1107,
+        0,
+        0,
+        "Reference temperature: %.2f C, sampling time: %.2f s",
+        reference->temperature,
+        reference->sampling_time);
+
+    return TERMO_ERR_OK;
+}
+
+static termo_err_t display_manager_event_measure_handler(
+    display_manager_t* manager,
+    display_event_payload_measure_t const* measure)
+{
+    TERMO_LOG_FUNC(TAG);
+    TERMO_ASSERT(manager != NULL);
+    TERMO_ASSERT(measure != NULL);
+
+    sh1107_draw_string_formatted(
+        &manager->sh1107,
+        0,
+        10,
+        "Measure temperature: %.2f C, humidity: %.2f %%, pressure: %.2f hPa",
+        measure->temperature,
+        measure->humidity,
+        measure->pressure);
 
     return TERMO_ERR_OK;
 }
@@ -231,11 +271,11 @@ termo_err_t display_manager_initialize(display_manager_t* manager,
     TERMO_ASSERT(config != NULL);
 
     manager->is_running = false;
+    manager->config = *config;
 
     memset(manager->sh1107_frame_buffer,
            0,
            sizeof(manager->sh1107_frame_buffer));
-    memcpy(&manager->config, config, sizeof(manager->config));
 
     sh1107_initialize(
         &manager->sh1107,
