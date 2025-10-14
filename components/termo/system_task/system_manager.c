@@ -14,8 +14,7 @@ static inline bool system_manager_receive_system_notify(system_notify_t* notify)
                            pdMS_TO_TICKS(10)) == pdPASS;
 }
 
-static inline bool system_manager_send_control_event(
-    control_event_t const* event)
+static inline bool system_manager_send_termo_event(termo_event_t const* event)
 {
     TERMO_ASSERT(event != NULL);
 
@@ -66,195 +65,139 @@ static termo_err_t system_manager_notify_handler(system_manager_t* manager,
     return TERMO_ERR_OK;
 }
 
-static termo_err_t system_manager_event_ready_handler(
+static termo_err_t system_manager_event_termo_ready_handler(
     system_manager_t* manager,
-    system_event_origin_t origin,
-    system_event_payload_ready_t const* ready)
+    system_event_payload_termo_ready_t const* termo_ready)
 {
     TERMO_LOG_FUNC(TAG);
     TERMO_ASSERT(manager != NULL);
-    TERMO_ASSERT(ready != NULL);
+    TERMO_ASSERT(termo_ready != NULL);
 
-    switch (origin) {
-        case SYSTEM_EVENT_ORIGIN_CONTROL: {
-            if (!system_manager_send_control_event(
-                    &(control_event_t){.type = CONTROL_EVENT_TYPE_START})) {
-                return TERMO_ERR_FAIL;
-            }
-            break;
-        }
-        case SYSTEM_EVENT_ORIGIN_DISPLAY: {
-            if (!system_manager_send_display_event(
-                    &(display_event_t){.type = DISPLAY_EVENT_TYPE_START})) {
-                return TERMO_ERR_FAIL;
-            }
-            break;
-        }
-        case SYSTEM_EVENT_ORIGIN_PACKET: {
-            if (!system_manager_send_packet_event(
-                    &(packet_event_t){.type = PACKET_EVENT_TYPE_START})) {
-                return TERMO_ERR_FAIL;
-            }
-            break;
-        }
-        default: {
-            return TERMO_ERR_UNKNOWN_EVENT;
-        }
+    termo_event_t event = {.type = TERMO_EVENT_TYPE_START, .payload.start = {}};
+    if (!system_manager_send_termo_event(&event)) {
+        return TERMO_ERR_FAIL;
     }
 
     return TERMO_ERR_OK;
 }
 
-static termo_err_t system_manager_event_started_handler(
+static termo_err_t system_manager_event_termo_started_handler(
     system_manager_t* manager,
-    system_event_origin_t origin,
-    system_event_payload_started_t const* started)
+    system_event_payload_termo_started_t const* termo_started)
 {
     TERMO_LOG_FUNC(TAG);
     TERMO_ASSERT(manager != NULL);
-    TERMO_ASSERT(started != NULL);
+    TERMO_ASSERT(termo_started != NULL);
 
-    switch (origin) {
-        case SYSTEM_EVENT_ORIGIN_CONTROL: {
-            manager->is_control_running = true;
-            break;
-        }
-        case SYSTEM_EVENT_ORIGIN_DISPLAY: {
-            manager->is_display_running = true;
-            break;
-        }
-        case SYSTEM_EVENT_ORIGIN_PACKET: {
-            manager->is_packet_running = true;
-            break;
-        }
-        default: {
-            return TERMO_ERR_UNKNOWN_EVENT;
-        }
-    }
+    manager->is_termo_running = true;
 
     return TERMO_ERR_OK;
 }
 
-static termo_err_t system_manager_event_stopped_handler(
+static termo_err_t system_manager_event_termo_stopped_handler(
     system_manager_t* manager,
-    system_event_origin_t origin,
-    system_event_payload_stopped_t const* stopped)
+    system_event_payload_termo_stopped_t const* termo_stopped)
 {
     TERMO_LOG_FUNC(TAG);
     TERMO_ASSERT(manager != NULL);
-    TERMO_ASSERT(stopped != NULL);
+    TERMO_ASSERT(termo_stopped != NULL);
 
-    switch (origin) {
-        case SYSTEM_EVENT_ORIGIN_CONTROL: {
-            manager->is_control_running = false;
-            break;
-        }
-        case SYSTEM_EVENT_ORIGIN_DISPLAY: {
-            manager->is_display_running = false;
-            break;
-        }
-        case SYSTEM_EVENT_ORIGIN_PACKET: {
-            manager->is_packet_running = false;
-            break;
-        }
-        default: {
-            return TERMO_ERR_UNKNOWN_EVENT;
-        }
-    }
+    manager->is_termo_running = false;
 
     return TERMO_ERR_OK;
 }
 
-static termo_err_t system_manager_event_reference_handler(
+static termo_err_t system_manager_termo_reference_handler(
     system_manager_t* manager,
-    system_event_origin_t origin,
-    system_event_payload_reference_t const* reference)
+    system_event_payload_termo_reference_t const* termo_reference)
 {
     TERMO_LOG_FUNC(TAG);
     TERMO_ASSERT(manager != NULL);
-    TERMO_ASSERT(reference != NULL);
+    TERMO_ASSERT(termo_reference != NULL);
 
-    if (reference->temperature == manager->reference_temperature &&
-        reference->sampling_time == manager->sampling_time) {
+    if (termo_reference->temperature == manager->reference_temperature &&
+        termo_reference->sampling_time == manager->sampling_time) {
         return TERMO_ERR_OK;
     }
 
-    if (manager->is_control_running) {
-        if (!system_manager_send_control_event(&(control_event_t){
-                .type = CONTROL_EVENT_TYPE_REFERENCE,
-                .payload.reference = {.temperature = reference->temperature,
-                                      .sampling_period =
-                                          reference->sampling_time}})) {
+    if (manager->is_termo_running) {
+        termo_event_t event = {
+            .type = TERMO_EVENT_TYPE_REFERENCE,
+            .payload.reference = {.temperature = termo_reference->temperature,
+                                  .sampling_period =
+                                      termo_reference->sampling_time}};
+        if (!system_manager_send_termo_event(&event)) {
             return TERMO_ERR_FAIL;
         }
     }
 
     if (manager->is_display_running) {
-        if (!system_manager_send_display_event(&(display_event_t){
-                .type = DISPLAY_EVENT_TYPE_REFERENCE,
-                .payload.reference = {.temperature = reference->temperature,
-                                      .sampling_time =
-                                          reference->sampling_time}})) {
+        display_event_t event = {
+            .type = DISPLAY_EVENT_TYPE_REFERENCE,
+            .payload.reference = {.temperature = termo_reference->temperature,
+                                  .sampling_time = termo_reference->sampling_time}};
+        if (!system_manager_send_display_event(&event)) {
             return TERMO_ERR_FAIL;
         }
     }
 
-    manager->reference_temperature = reference->temperature;
-    manager->sampling_time = reference->sampling_time;
+    manager->reference_temperature = termo_reference->temperature;
+    manager->sampling_time = termo_reference->sampling_time;
 
     TERMO_LOG(TAG,
               "New reference: temperature = %.2f, sampling_time = %.2f",
-              reference->temperature,
-              reference->sampling_time);
+              termo_reference->temperature,
+              termo_reference->sampling_time);
 
     return TERMO_ERR_OK;
 }
 
-static termo_err_t system_manager_event_measure_handler(
+static termo_err_t system_manager_termo_measure_handler(
     system_manager_t* manager,
-    system_event_origin_t origin,
-    system_event_payload_measure_t const* measure)
+    system_event_payload_termo_measure_t const* termo_measure)
 {
     TERMO_LOG_FUNC(TAG);
     TERMO_ASSERT(manager != NULL);
-    TERMO_ASSERT(measure != NULL);
+    TERMO_ASSERT(termo_measure != NULL);
 
-    if (manager->measure_humidity == measure->humidity &&
-        manager->measure_pressure == measure->pressure &&
-        manager->measure_temperature == measure->temperature) {
+    if (manager->measure_humidity == termo_measure->humidity &&
+        manager->measure_pressure == termo_measure->pressure &&
+        manager->measure_temperature == termo_measure->temperature) {
         return TERMO_ERR_OK;
     }
 
     if (manager->is_display_running) {
-        if (!system_manager_send_display_event(&(display_event_t){
-                .type = DISPLAY_EVENT_TYPE_MEASURE,
-                .payload.measure = {.humidity = measure->humidity,
-                                    .pressure = measure->pressure,
-                                    .temperature = measure->temperature}})) {
+        display_event_t event = {
+            .type = DISPLAY_EVENT_TYPE_MEASURE,
+            .payload.measure = {.humidity = termo_measure->humidity,
+                                .pressure = termo_measure->pressure,
+                                .temperature = termo_measure->temperature}};
+        if (!system_manager_send_display_event(&event)) {
             return TERMO_ERR_FAIL;
         }
     }
 
     if (manager->is_packet_running) {
-        if (!system_manager_send_packet_event(&(packet_event_t){
-                .type = PACKET_EVENT_TYPE_MEASURE,
-                .payload.measure = {.humidity = measure->humidity,
-                                    .pressure = measure->pressure,
-                                    .temperature = measure->temperature}})) {
+        packet_event_t event = {
+            .type = PACKET_EVENT_TYPE_MEASURE,
+            .payload.measure = {.humidity = termo_measure->humidity,
+                                .pressure = termo_measure->pressure,
+                                .temperature = termo_measure->temperature}};
+        if (!system_manager_send_packet_event(&event)) {
             return TERMO_ERR_FAIL;
         }
     }
 
-    manager->measure_humidity = measure->humidity;
-    manager->measure_pressure = measure->pressure;
-    manager->measure_temperature = measure->temperature;
+    manager->measure_humidity = termo_measure->humidity;
+    manager->measure_pressure = termo_measure->pressure;
+    manager->measure_temperature = termo_measure->temperature;
 
     TERMO_LOG(TAG,
               "New measure: temperature = %.2f, humidity = %.2f, pressure = "
               "%.2f",
-              measure->temperature,
-              measure->humidity,
-              measure->pressure);
+              termo_measure->temperature,
+              termo_measure->humidity,
+              termo_measure->pressure);
 
     return TERMO_ERR_OK;
 }
@@ -266,34 +209,30 @@ static termo_err_t system_manager_event_handler(system_manager_t* manager,
     TERMO_ASSERT(event != NULL);
 
     switch (event->type) {
-        case SYSTEM_EVENT_TYPE_READY: {
-            return system_manager_event_ready_handler(manager,
-                                                      event->origin,
-                                                      &event->payload.ready);
-        }
-        case SYSTEM_EVENT_TYPE_STARTED: {
-            return system_manager_event_started_handler(
+        case SYSTEM_EVENT_TYPE_TERMO_READY: {
+            return system_manager_event_termo_ready_handler(
                 manager,
-                event->origin,
-                &event->payload.started);
+                &event->payload.termo_ready);
         }
-        case SYSTEM_EVENT_TYPE_STOPPED: {
-            return system_manager_event_stopped_handler(
+        case SYSTEM_EVENT_TYPE_TERMO_STARTED: {
+            return system_manager_event_termo_started_handler(
                 manager,
-                event->origin,
-                &event->payload.stopped);
+                &event->payload.termo_started);
         }
-        case SYSTEM_EVENT_TYPE_REFERENCE: {
-            return system_manager_event_reference_handler(
+        case SYSTEM_EVENT_TYPE_TERMO_STOPPED: {
+            return system_manager_event_termo_stopped_handler(
                 manager,
-                event->origin,
-                &event->payload.reference);
+                &event->payload.termo_stopped);
         }
-        case SYSTEM_EVENT_TYPE_MEASURE: {
-            return system_manager_event_measure_handler(
+        case SYSTEM_EVENT_TYPE_TERMO_REFERENCE: {
+            return system_manager_termo_reference_handler(
                 manager,
-                event->origin,
-                &event->payload.measure);
+                &event->payload.termo_reference);
+        }
+        case SYSTEM_EVENT_TYPE_TERMO_MEASURE: {
+            return system_manager_termo_measure_handler(
+                manager,
+                &event->payload.termo_measure);
         }
         default: {
             return TERMO_ERR_UNKNOWN_EVENT;
@@ -327,7 +266,7 @@ termo_err_t system_manager_initialize(system_manager_t* manager,
     TERMO_ASSERT(config != NULL);
 
     manager->config = *config;
-    manager->is_control_running = false;
+    manager->is_termo_running = false;
     manager->is_display_running = false;
     manager->is_packet_running = false;
     manager->reference_temperature = 0.0F;

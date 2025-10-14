@@ -8,35 +8,69 @@ typedef enum {
 } system_event_origin_t;
 
 typedef enum {
-    SYSTEM_EVENT_TYPE_READY,
-    SYSTEM_EVENT_TYPE_STARTED,
-    SYSTEM_EVENT_TYPE_STOPPED,
-    SYSTEM_EVENT_TYPE_REFERENCE,
-    SYSTEM_EVENT_TYPE_MEASURE,
+    SYSTEM_EVENT_TYPE_TERMO_READY,
+    SYSTEM_EVENT_TYPE_TERMO_STARTED,
+    SYSTEM_EVENT_TYPE_TERMO_STOPPED,
+    SYSTEM_EVENT_TYPE_TERMO_REFERENCE,
+    SYSTEM_EVENT_TYPE_TERMO_MEASURE,
+    SYSTEM_EVENT_TYPE_PACKET_READY,
+    SYSTEM_EVENT_TYPE_PACKET_STARTED,
+    SYSTEM_EVENT_TYPE_PACKET_STOPPED,
+    SYSTEM_EVENT_TYPE_DISPLAY_READY,
+    SYSTEM_EVENT_TYPE_DISPLAY_STARTED,
+    SYSTEM_EVENT_TYPE_DISPLAY_STOPPED,
 } system_event_type_t;
 
 typedef struct {
-} system_event_payload_ready_t;
+} system_event_payload_termo_ready_t;
+
 typedef struct {
-} system_event_payload_started_t;
+} system_event_payload_termo_started_t;
+
 typedef struct {
-} system_event_payload_stopped_t;
+} system_event_payload_termo_stopped_t;
+
 typedef struct {
     float temperature;
     float sampling_time;
-} system_event_payload_reference_t;
+} system_event_payload_termo_reference_t;
+
 typedef struct {
     float temperature;
     float humidity;
     float pressure;
-} system_event_payload_measure_t;
+} system_event_payload_termo_measure_t;
+
+typedef struct {
+} system_event_payload_packet_ready_t;
+
+typedef struct {
+} system_event_payload_packet_started_t;
+
+typedef struct {
+} system_event_payload_packet_stopped_t;
+
+typedef struct {
+} system_event_payload_display_ready_t;
+
+typedef struct {
+} system_event_payload_display_started_t;
+
+typedef struct {
+} system_event_payload_display_stopped_t;
 
 typedef union {
-    system_event_payload_ready_t ready;
-    system_event_payload_started_t started;
-    system_event_payload_stopped_t stopped;
-    system_event_payload_reference_t reference;
-    system_event_payload_measure_t measure;
+    system_event_payload_termo_ready_t termo_ready;
+    system_event_payload_termo_started_t termo_started;
+    system_event_payload_termo_stopped_t termo_stopped;
+    system_event_payload_termo_measure_t termo_measure;
+    system_event_payload_termo_reference_t termo_reference;
+    system_event_payload_packet_ready_t packet_ready;
+    system_event_payload_packet_started_t packet_started;
+    system_event_payload_packet_stopped_t packet_stopped;
+    system_event_payload_display_ready_t display_ready;
+    system_event_payload_display_started_t display_started;
+    system_event_payload_display_stopped_t display_stopped;
 } system_event_payload_t;
 
 typedef struct {
@@ -46,30 +80,32 @@ typedef struct {
 } system_event_t;
 
 typedef enum {
-    CONTROL_EVENT_TYPE_START,
-    CONTROL_EVENT_TYPE_STOP,
-    CONTROL_EVENT_TYPE_REFERENCE,
-} control_event_type_t;
+    TERMO_EVENT_TYPE_START,
+    TERMO_EVENT_TYPE_STOP,
+    TERMO_EVENT_TYPE_REFERENCE,
+} termo_event_type_t;
 
 typedef struct {
-} control_event_payload_start_t;
+} termo_event_payload_start_t;
+
 typedef struct {
-} control_event_payload_stop_t;
+} termo_event_payload_stop_t;
+
 typedef struct {
     float temperature;
     float sampling_period;
-} control_event_payload_reference_t;
+} termo_event_payload_reference_t;
 
 typedef union {
-    control_event_payload_start_t start;
-    control_event_payload_stop_t stop;
-    control_event_payload_reference_t reference;
-} control_event_payload_t;
+    termo_event_payload_start_t start;
+    termo_event_payload_stop_t stop;
+    termo_event_payload_reference_t reference;
+} termo_event_payload_t;
 
 typedef struct {
-    control_event_type_t type;
-    control_event_payload_t payload;
-} control_event_t;
+    termo_event_type_t type;
+    termo_event_payload_t payload;
+} termo_event_t;
 
 typedef enum {
     DISPLAY_EVENT_TYPE_START,
@@ -80,13 +116,16 @@ typedef enum {
 
 typedef struct {
 } display_event_payload_start_t;
+
 typedef struct {
 } display_event_payload_stop_t;
+
 typedef struct {
     float temperature;
     float humidity;
     float pressure;
 } display_event_payload_measure_t;
+
 typedef struct {
     float sampling_time;
     float temperature;
@@ -112,8 +151,10 @@ typedef enum {
 
 typedef struct {
 } packet_event_payload_start_t;
+
 typedef struct {
 } packet_event_payload_stop_t;
+
 typedef struct {
     float temperature;
     float humidity;

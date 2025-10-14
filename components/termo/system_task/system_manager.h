@@ -10,7 +10,7 @@ typedef struct {
 } system_config_t;
 
 typedef struct {
-    bool is_control_running;
+    bool is_termo_running;
     bool is_display_running;
     bool is_packet_running;
     float reference_temperature;

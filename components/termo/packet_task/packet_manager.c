@@ -2,8 +2,8 @@
 #include "packet_in.h"
 #include "packet_out.h"
 #include "termo_common.h"
-#include "usbd_cdc_if.h"
 #include "usb_device.h"
+#include "usbd_cdc_if.h"
 #include <string.h>
 
 static char const* const TAG = "packet_manager";
@@ -62,9 +62,10 @@ static termo_err_t packet_manager_event_start_handler(
         return TERMO_ERR_ALREADY_RUNNING;
     }
 
-    if (!packet_manager_send_system_event(
-            &(system_event_t){.type = SYSTEM_EVENT_TYPE_STARTED,
-                              .origin = SYSTEM_EVENT_ORIGIN_PACKET})) {
+    system_event_t event = {.origin = SYSTEM_EVENT_ORIGIN_PACKET,
+                            .type = SYSTEM_EVENT_TYPE_PACKET_STARTED,
+                            .payload.packet_started = {}};
+    if (!packet_manager_send_system_event(&event)) {
         return TERMO_ERR_FAIL;
     }
 
@@ -85,9 +86,10 @@ static termo_err_t packet_manager_event_stop_handler(
         return TERMO_ERR_NOT_RUNNING;
     }
 
-    if (!packet_manager_send_system_event(
-            &(system_event_t){.type = SYSTEM_EVENT_TYPE_STOPPED,
-                              .origin = SYSTEM_EVENT_ORIGIN_PACKET})) {
+    system_event_t event = {.origin = SYSTEM_EVENT_ORIGIN_PACKET,
+                            .type = SYSTEM_EVENT_TYPE_PACKET_STOPPED,
+                            .payload.packet_stopped = {}};
+    if (!packet_manager_send_system_event(&event)) {
         return TERMO_ERR_FAIL;
     }
 
@@ -172,9 +174,10 @@ termo_err_t packet_manager_initialize(packet_manager_t* manager,
     manager->is_running = false;
     manager->config = *config;
 
-    if (!packet_manager_send_system_event(
-            &(system_event_t){.type = SYSTEM_EVENT_TYPE_READY,
-                              .origin = SYSTEM_EVENT_ORIGIN_PACKET})) {
+    system_event_t event = {.origin = SYSTEM_EVENT_ORIGIN_PACKET,
+                            .type = SYSTEM_EVENT_TYPE_PACKET_READY,
+                            .payload.packet_ready = {}};
+    if (!packet_manager_send_system_event(&event)) {
         return TERMO_ERR_FAIL;
     }
 

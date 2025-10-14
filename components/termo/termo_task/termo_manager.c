@@ -1,15 +1,15 @@
-#include "control_manager.h"
+#include "termo_manager.h"
 #include "FreeRTOS.h"
 #include "queue.h"
 #include "task.h"
 #include "termo_common.h"
 #include <string.h>
 
-static char const* const TAG = "control_manager";
+static char const* const TAG = "termo_manager";
 
 static mcp9808_err_t mcp9808_bus_initialize(void* user)
 {
-    control_config_t* config = user;
+    termo_config_t* config = user;
 
     return HAL_I2C_IsDeviceReady(config->mcp9808_i2c_bus,
                                  config->mcp9808_i2c_address << 1U,
@@ -29,7 +29,7 @@ static mcp9808_err_t mcp9808_bus_write_data(void* user,
                                             uint8_t const* data,
                                             size_t data_size)
 {
-    control_config_t* config = user;
+    termo_config_t* config = user;
 
     return HAL_I2C_Mem_Write(config->mcp9808_i2c_bus,
                              config->mcp9808_i2c_address << 1U,
@@ -47,7 +47,7 @@ static mcp9808_err_t mcp9808_bus_read_data(void* user,
                                            uint8_t* data,
                                            size_t data_size)
 {
-    control_config_t* config = user;
+    termo_config_t* config = user;
 
     return HAL_I2C_Mem_Read(config->mcp9808_i2c_bus,
                             config->mcp9808_i2c_address << 1U,
@@ -104,7 +104,7 @@ static mcp9808_err_t mcp9808_initialize_chip(mcp9808_t const* mcp9808)
 
 float32_t mcp9808_resolution_to_scale(mcp9808_resolution_t);
 
-static inline bool control_manager_start_pwm_timer(control_manager_t* manager)
+static inline bool termo_manager_start_pwm_timer(termo_manager_t* manager)
 {
     TERMO_ASSERT(manager != NULL);
 
@@ -112,7 +112,7 @@ static inline bool control_manager_start_pwm_timer(control_manager_t* manager)
                              manager->config.pwm_channel) == HAL_OK;
 }
 
-static inline bool control_manager_stop_pwm_timer(control_manager_t* manager)
+static inline bool termo_manager_stop_pwm_timer(termo_manager_t* manager)
 {
     TERMO_ASSERT(manager != NULL);
 
@@ -120,9 +120,8 @@ static inline bool control_manager_stop_pwm_timer(control_manager_t* manager)
                             manager->config.pwm_channel) == HAL_OK;
 }
 
-static inline bool control_manager_set_pwm_timer_compare(
-    control_manager_t* manager,
-    uint32_t compare)
+static inline bool termo_manager_set_pwm_timer_compare(termo_manager_t* manager,
+                                                       uint32_t compare)
 {
     TERMO_ASSERT(manager != NULL);
 
@@ -132,22 +131,21 @@ static inline bool control_manager_set_pwm_timer_compare(
     return true;
 }
 
-static inline bool control_manager_start_delta_timer(control_manager_t* manager)
+static inline bool termo_manager_start_delta_timer(termo_manager_t* manager)
 {
     TERMO_ASSERT(manager != NULL);
 
     return HAL_TIM_Base_Start_IT(manager->config.delta_timer) == HAL_OK;
 }
 
-static inline bool control_manager_stop_delta_timer(control_manager_t* manager)
+static inline bool termo_manager_stop_delta_timer(termo_manager_t* manager)
 {
     TERMO_ASSERT(manager != NULL);
 
     return HAL_TIM_Base_Stop_IT(manager->config.delta_timer) == HAL_OK;
 }
 
-static inline bool control_manager_send_system_event(
-    system_event_t const* event)
+static inline bool termo_manager_send_system_event(system_event_t const* event)
 {
     TERMO_ASSERT(event != NULL);
 
@@ -156,24 +154,23 @@ static inline bool control_manager_send_system_event(
                       pdMS_TO_TICKS(10)) == pdPASS;
 }
 
-static inline bool control_manager_receive_control_notify(
-    control_notify_t* notify)
+static inline bool termo_manager_receive_termo_notify(termo_notify_t* notify)
 {
     TERMO_ASSERT(notify != NULL);
 
     return xTaskNotifyWait(0x00,
-                           CONTROL_NOTIFY_ALL,
+                           TERMO_NOTIFY_ALL,
                            (uint32_t*)notify,
                            pdMS_TO_TICKS(10)) == pdPASS;
 }
 
-static inline bool control_manager_has_control_event(void)
+static inline bool termo_manager_has_termo_event(void)
 {
     return uxQueueMessagesWaiting(
                termo_queue_manager_get(TERMO_QUEUE_TYPE_CONTROL)) > 0UL;
 }
 
-static inline bool control_manager_receive_control_event(control_event_t* event)
+static inline bool termo_manager_receive_termo_event(termo_event_t* event)
 {
     TERMO_ASSERT(event != NULL);
 
@@ -182,25 +179,25 @@ static inline bool control_manager_receive_control_event(control_event_t* event)
                          pdMS_TO_TICKS(10)) == pdPASS;
 }
 
-static termo_err_t control_manager_notify_delta_timer_handler(
-    control_manager_t* manager)
+static termo_err_t termo_manager_notify_delta_timer_handler(
+    termo_manager_t* manager)
 {
     TERMO_LOG_FUNC(TAG);
     TERMO_ASSERT(manager != NULL);
 
-    float control_temperature;
+    float termo_temperature;
     float error_temperature = manager->reference - manager->measurement;
     if (pid_regulator_get_sat_control(&manager->pid,
                                       error_temperature,
                                       manager->delta_time,
-                                      &control_temperature) !=
+                                      &termo_temperature) !=
         PID_REGULATOR_ERR_OK) {
         TERMO_LOG(TAG, "Failed pid_regulator_get_sat_control!");
         return TERMO_ERR_FAIL;
     }
 
     uint32_t compare =
-        (uint32_t)(control_temperature *
+        (uint32_t)(termo_temperature *
                    (float)manager->config.pwm_timer->Init.Period /
                    mcp9808_resolution_to_scale(0x03));
 
@@ -210,7 +207,7 @@ static termo_err_t control_manager_notify_delta_timer_handler(
         compare = 0;
     }
 
-    if (!control_manager_set_pwm_timer_compare(manager, compare)) {
+    if (!termo_manager_set_pwm_timer_compare(manager, compare)) {
         return TERMO_ERR_FAIL;
     }
 
@@ -219,14 +216,14 @@ static termo_err_t control_manager_notify_delta_timer_handler(
               manager->reference,
               manager->measurement,
               error_temperature,
-              control_temperature,
+              termo_temperature,
               compare);
 
     return TERMO_ERR_OK;
 }
 
-static termo_err_t control_manager_notify_temp_ready_handler(
-    control_manager_t* manager)
+static termo_err_t termo_manager_notify_temp_ready_handler(
+    termo_manager_t* manager)
 {
     TERMO_LOG_FUNC(TAG);
     TERMO_ASSERT(manager != NULL);
@@ -243,24 +240,24 @@ static termo_err_t control_manager_notify_temp_ready_handler(
     return TERMO_ERR_OK;
 }
 
-static termo_err_t control_manager_notify_handler(control_manager_t* manager,
-                                                  control_notify_t notify)
+static termo_err_t termo_manager_notify_handler(termo_manager_t* manager,
+                                                termo_notify_t notify)
 {
     TERMO_ASSERT(manager != NULL);
 
-    if ((notify & CONTROL_NOTIFY_TEMP_READY) == CONTROL_NOTIFY_TEMP_READY) {
-        TERMO_RET_ON_ERR(control_manager_notify_temp_ready_handler(manager));
+    if ((notify & TERMO_NOTIFY_TEMP_READY) == TERMO_NOTIFY_TEMP_READY) {
+        TERMO_RET_ON_ERR(termo_manager_notify_temp_ready_handler(manager));
     }
-    if ((notify & CONTROL_NOTIFY_DELTA_TIMER) == CONTROL_NOTIFY_DELTA_TIMER) {
-        TERMO_RET_ON_ERR(control_manager_notify_delta_timer_handler(manager));
+    if ((notify & TERMO_NOTIFY_DELTA_TIMER) == TERMO_NOTIFY_DELTA_TIMER) {
+        TERMO_RET_ON_ERR(termo_manager_notify_delta_timer_handler(manager));
     }
 
     return TERMO_ERR_OK;
 }
 
-static termo_err_t control_manager_event_start_handler(
-    control_manager_t* manager,
-    control_event_payload_start_t const* start)
+static termo_err_t termo_manager_event_start_handler(
+    termo_manager_t* manager,
+    termo_event_payload_start_t const* start)
 {
     TERMO_LOG_FUNC(TAG);
     TERMO_ASSERT(manager != NULL);
@@ -270,17 +267,18 @@ static termo_err_t control_manager_event_start_handler(
         return TERMO_ERR_ALREADY_RUNNING;
     }
 
-    if (!control_manager_start_delta_timer(manager)) {
+    if (!termo_manager_start_delta_timer(manager)) {
         return TERMO_ERR_FAIL;
     }
 
-    if (!control_manager_start_pwm_timer(manager)) {
+    if (!termo_manager_start_pwm_timer(manager)) {
         return TERMO_ERR_FAIL;
     }
 
-    if (!control_manager_send_system_event(
-            &(system_event_t){.type = SYSTEM_EVENT_TYPE_STARTED,
-                              .origin = SYSTEM_EVENT_ORIGIN_CONTROL})) {
+    system_event_t event = {.origin = SYSTEM_EVENT_ORIGIN_CONTROL,
+                            .type = SYSTEM_EVENT_TYPE_TERMO_STARTED,
+                            .payload.termo_started = {}};
+    if (!termo_manager_send_system_event(&event)) {
         return TERMO_ERR_FAIL;
     }
 
@@ -289,9 +287,9 @@ static termo_err_t control_manager_event_start_handler(
     return TERMO_ERR_OK;
 }
 
-static termo_err_t control_manager_event_stop_handler(
-    control_manager_t* manager,
-    control_event_payload_stop_t const* stop)
+static termo_err_t termo_manager_event_stop_handler(
+    termo_manager_t* manager,
+    termo_event_payload_stop_t const* stop)
 {
     TERMO_LOG_FUNC(TAG);
     TERMO_ASSERT(manager != NULL);
@@ -301,17 +299,18 @@ static termo_err_t control_manager_event_stop_handler(
         return TERMO_ERR_NOT_RUNNING;
     }
 
-    if (!control_manager_stop_delta_timer(manager)) {
+    if (!termo_manager_stop_delta_timer(manager)) {
         return TERMO_ERR_FAIL;
     }
 
-    if (!control_manager_stop_pwm_timer(manager)) {
+    if (!termo_manager_stop_pwm_timer(manager)) {
         return TERMO_ERR_FAIL;
     }
 
-    if (!control_manager_send_system_event(
-            &(system_event_t){.type = SYSTEM_EVENT_TYPE_STOPPED,
-                              .origin = SYSTEM_EVENT_ORIGIN_CONTROL})) {
+    system_event_t event = {.origin = SYSTEM_EVENT_ORIGIN_CONTROL,
+                            .type = SYSTEM_EVENT_TYPE_TERMO_STOPPED,
+                            .payload.termo_stopped = {}};
+    if (!termo_manager_send_system_event(&event)) {
         return TERMO_ERR_FAIL;
     }
 
@@ -320,9 +319,9 @@ static termo_err_t control_manager_event_stop_handler(
     return TERMO_ERR_OK;
 }
 
-static termo_err_t control_manager_event_reference_handler(
-    control_manager_t* manager,
-    control_event_payload_reference_t const* reference)
+static termo_err_t termo_manager_event_reference_handler(
+    termo_manager_t* manager,
+    termo_event_payload_reference_t const* reference)
 {
     TERMO_LOG_FUNC(TAG);
     TERMO_ASSERT(manager != NULL);
@@ -334,23 +333,23 @@ static termo_err_t control_manager_event_reference_handler(
     return TERMO_ERR_OK;
 }
 
-static termo_err_t control_manager_event_handler(control_manager_t* manager,
-                                                 control_event_t const* event)
+static termo_err_t termo_manager_event_handler(termo_manager_t* manager,
+                                               termo_event_t const* event)
 {
     TERMO_ASSERT(manager != NULL);
     TERMO_ASSERT(event != NULL);
 
     switch (event->type) {
-        case CONTROL_EVENT_TYPE_START: {
-            return control_manager_event_start_handler(manager,
-                                                       &event->payload.start);
+        case TERMO_EVENT_TYPE_START: {
+            return termo_manager_event_start_handler(manager,
+                                                     &event->payload.start);
         }
-        case CONTROL_EVENT_TYPE_STOP: {
-            return control_manager_event_stop_handler(manager,
-                                                      &event->payload.stop);
+        case TERMO_EVENT_TYPE_STOP: {
+            return termo_manager_event_stop_handler(manager,
+                                                    &event->payload.stop);
         }
-        case CONTROL_EVENT_TYPE_REFERENCE: {
-            return control_manager_event_reference_handler(
+        case TERMO_EVENT_TYPE_REFERENCE: {
+            return termo_manager_event_reference_handler(
                 manager,
                 &event->payload.reference);
         }
@@ -360,32 +359,32 @@ static termo_err_t control_manager_event_handler(control_manager_t* manager,
     }
 }
 
-termo_err_t control_manager_process(control_manager_t* manager)
+termo_err_t termo_manager_process(termo_manager_t* manager)
 {
     TERMO_ASSERT(manager != NULL);
 
-    control_notify_t notify;
-    if (control_manager_receive_control_notify(&notify)) {
-        TERMO_RET_ON_ERR(control_manager_notify_handler(manager, notify));
+    termo_notify_t notify;
+    if (termo_manager_receive_termo_notify(&notify)) {
+        TERMO_RET_ON_ERR(termo_manager_notify_handler(manager, notify));
     }
 
-    control_event_t event;
-    while (control_manager_has_control_event()) {
-        if (control_manager_receive_control_event(&event)) {
-            TERMO_RET_ON_ERR(control_manager_event_handler(manager, &event));
+    termo_event_t event;
+    while (termo_manager_has_termo_event()) {
+        if (termo_manager_receive_termo_event(&event)) {
+            TERMO_RET_ON_ERR(termo_manager_event_handler(manager, &event));
         }
     }
 
     xTaskNotify(termo_task_manager_get(TERMO_TASK_TYPE_CONTROL),
-                CONTROL_NOTIFY_TEMP_READY,
+                TERMO_NOTIFY_TEMP_READY,
                 eSetBits);
 
     return TERMO_ERR_OK;
 }
 
-termo_err_t control_manager_initialize(control_manager_t* manager,
-                                       control_config_t const* config,
-                                       control_params_t const* params)
+termo_err_t termo_manager_initialize(termo_manager_t* manager,
+                                     termo_config_t const* config,
+                                     termo_params_t const* params)
 {
     TERMO_ASSERT(manager != NULL);
     TERMO_ASSERT(config != NULL);
@@ -427,9 +426,10 @@ termo_err_t control_manager_initialize(control_manager_t* manager,
         TERMO_LOG(TAG, "Failed pid_regulator_initialize!");
     }
 
-    if (!control_manager_send_system_event(
-            &(system_event_t){.type = SYSTEM_EVENT_TYPE_READY,
-                              .origin = SYSTEM_EVENT_ORIGIN_CONTROL})) {
+    system_event_t event = {.origin = SYSTEM_EVENT_ORIGIN_CONTROL,
+                            .type = SYSTEM_EVENT_TYPE_TERMO_READY,
+                            .payload.termo_ready = {}};
+    if (!termo_manager_send_system_event(&event)) {
         return TERMO_ERR_FAIL;
     }
 

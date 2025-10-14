@@ -146,9 +146,10 @@ static termo_err_t display_manager_event_start_handler(
         return TERMO_ERR_ALREADY_RUNNING;
     }
 
-    if (!display_manager_send_system_event(
-            &(system_event_t){.type = SYSTEM_EVENT_TYPE_STARTED,
-                              .origin = SYSTEM_EVENT_ORIGIN_DISPLAY})) {
+    system_event_t event = {.origin = SYSTEM_EVENT_ORIGIN_DISPLAY,
+                            .type = SYSTEM_EVENT_TYPE_DISPLAY_STARTED,
+                            .payload.display_started = {}};
+    if (!display_manager_send_system_event(&event)) {
         return TERMO_ERR_FAIL;
     }
 
@@ -169,9 +170,10 @@ static termo_err_t display_manager_event_stop_handler(
         return TERMO_ERR_NOT_RUNNING;
     }
 
-    if (!display_manager_send_system_event(
-            &(system_event_t){.type = SYSTEM_EVENT_TYPE_STOPPED,
-                              .origin = SYSTEM_EVENT_ORIGIN_DISPLAY})) {
+    system_event_t event = {.origin = SYSTEM_EVENT_ORIGIN_DISPLAY,
+                            .type = SYSTEM_EVENT_TYPE_DISPLAY_STOPPED,
+                            .payload.display_stopped = {}};
+    if (!display_manager_send_system_event(&event)) {
         return TERMO_ERR_FAIL;
     }
 
@@ -301,9 +303,10 @@ termo_err_t display_manager_initialize(display_manager_t* manager,
     sh1107_draw_string(&manager->sh1107, 30, 30, "DUPA CIPA");
     sh1107_display_frame_buffer(&manager->sh1107);
 
-    if (!display_manager_send_system_event(
-            &(system_event_t){.type = SYSTEM_EVENT_TYPE_READY,
-                              .origin = SYSTEM_EVENT_ORIGIN_DISPLAY})) {
+    system_event_t event = {.origin = SYSTEM_EVENT_ORIGIN_DISPLAY,
+                            .type = SYSTEM_EVENT_TYPE_DISPLAY_READY,
+                            .payload.display_ready = {}};
+    if (!display_manager_send_system_event(&event)) {
         return TERMO_ERR_FAIL;
     }
 

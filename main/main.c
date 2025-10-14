@@ -7,21 +7,21 @@
 #include "usart.h"
 #include "usb_device.h"
 
-static termo_config_t config = {
+static termo_ctx_t config = {
     .system_ctx = {.config = {}},
-    .control_ctx = {.config = {.delta_timer = &htim2,
-                               .mcp9808_i2c_bus = &hi2c1,
-                               .mcp9808_i2c_address =
-                                   MCP9808_SLAVE_ADDRESS_A2L_A1L_A0L,
-                               .pwm_timer = &htim3,
-                               .pwm_channel = TIM_CHANNEL_2},
-                    .params = {.kp = 10.0F,
-                               .ki = 0.5F,
-                               .kd = 1.0F,
-                               .kc = 0.1F,
-                               .min_temp = 0.0F,
-                               .max_temp = 100.0F,
-                               .sampling_time = 1.0F}},
+    .termo_ctx = {.config = {.delta_timer = &htim2,
+                             .mcp9808_i2c_bus = &hi2c1,
+                             .mcp9808_i2c_address =
+                                 MCP9808_SLAVE_ADDRESS_A2L_A1L_A0L,
+                             .pwm_timer = &htim3,
+                             .pwm_channel = TIM_CHANNEL_2},
+                  .params = {.kp = 10.0F,
+                             .ki = 0.5F,
+                             .kd = 1.0F,
+                             .kc = 0.1F,
+                             .min_temp = 0.0F,
+                             .max_temp = 100.0F,
+                             .sampling_time = 1.0F}},
     .display_ctx = {
         .config = {.sh1107_spi_bus = &hspi3,
                    .sh1107_control_gpio = SH1107_CONTROL_GPIO_Port,

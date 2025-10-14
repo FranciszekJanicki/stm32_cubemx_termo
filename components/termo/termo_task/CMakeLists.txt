@@ -1,22 +1,22 @@
-add_library(control_task STATIC)
+add_library(termo_task STATIC)
 
-target_sources(control_task PRIVATE 
-    control_manager.c
-    control_task.c
+target_sources(termo_task PRIVATE 
+    termo_manager.c
+    termo_task.c
 )
 
-target_include_directories(control_task PUBLIC
+target_include_directories(termo_task PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
-target_link_libraries(control_task PUBLIC
+target_link_libraries(termo_task PUBLIC
     common
     mcp9808
     pid_regulator
     stm32cubemx
 )
 
-target_compile_options(control_task PUBLIC
+target_compile_options(termo_task PUBLIC
     -std=c23
     -Wall
     -Wextra
