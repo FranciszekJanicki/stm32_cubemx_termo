@@ -159,7 +159,7 @@ bool packet_in_encode(packet_in_t const* packet,
     if (packet->type == PACKET_IN_TYPE_REFERENCE) {
         written_len = snprintf(buf + used_len,
                                buf_len - used_len,
-                               "  \"packet_payload_reference\": {\n"
+                               "  \"packet_payload\": {\n"
                                "    \"temperature\": %.2f,\n"
                                "    \"sampling_time\": %.2f\n"
                                "  }\n",
@@ -186,7 +186,6 @@ bool packet_in_encode(packet_in_t const* packet,
         return false;
     }
 
-    buf[used_len] = '\0';
     return true;
 }
 
@@ -200,8 +199,8 @@ bool packet_in_decode(const uint8_t (*buffer)[PACKET_IN_SIZE],
     char const* buf = (char const*)buffer;
 
     int type;
-    int scanned_len = sscanf(buf, "{%*[^:]: %d", &type);
-    if (scanned_len != 1) {
+    int scanned_num = sscanf(buf, "{%*[^:]: %d", &type);
+    if (scanned_num != 1) {
         return false;
     }
     packet->type = (packet_in_type_t)type;
@@ -209,12 +208,12 @@ bool packet_in_decode(const uint8_t (*buffer)[PACKET_IN_SIZE],
     if (packet->type == PACKET_IN_TYPE_REFERENCE) {
         float temperature = 0.0F;
         float sampling_time = 0.0F;
-        scanned_len =
+        scanned_num =
             sscanf(buf,
                    "%*[^t]temperature\": %f,%*[^s]sampling_time\": %f",
                    &temperature,
                    &sampling_time);
-        if (scanned_len != 2) {
+        if (scanned_num != 2) {
             return false;
         }
         packet->payload.reference.temperature = temperature;

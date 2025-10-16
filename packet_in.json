@@ -1,0 +1,7 @@
+{
+    "packet_type": "reference",
+    "packet_payload": {
+        "temperature": 25.0,
+        "sampling_time": 0.01
+    }
+}

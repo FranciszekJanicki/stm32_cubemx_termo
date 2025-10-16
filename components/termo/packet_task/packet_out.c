@@ -138,13 +138,101 @@ bool packet_out_encode(packet_out_t const* packet,
         return false;
     }
 
+    char* buf = (char*)buffer;
+    size_t buf_len = PACKET_OUT_SIZE;
+    size_t used_len = 0UL;
+
+    int written_len =
+        snprintf(buf + used_len, buf_len - used_len, "{\n", packet->type);
+    if (written_len < 0) {
+        return false;
+    }
+
+    used_len += (size_t)written_len;
+    if (used_len >= buf_len) {
+        return false;
+    }
+
+    written_len = snprintf(buf + used_len,
+                           buf_len - used_len,
+                           "packet_type: %d\n",
+                           packet->type);
+    if (written_len < 0) {
+        return false;
+    }
+
+    used_len += (size_t)written_len;
+    if (used_len >= buf_len) {
+        return false;
+    }
+
+    if (packet->type == PACKET_OUT_TYPE_MEASURE) {
+        written_len = snprintf(buf + used_len,
+                               buf_len - used_len,
+                               "  \"packet_payload\": {\n"
+                               "    \"temperature\": %.2f,\n"
+                               "    \"pressure\": %.2f\n"
+                               "    \"humidity\": %.2f\n"
+                               "  }\n",
+                               packet->payload.measure.temperature,
+                               packet->payload.measure.pressure,
+                               packet->payload.measure.humidity);
+    }
+    if (written_len < 0) {
+        return false;
+    }
+
+    used_len += (size_t)written_len;
+    if (used_len >= buf_len) {
+        return false;
+    }
+
+    written_len =
+        snprintf(buf + used_len, buf_len - used_len, "}\n", packet->type);
+    if (written_len < 0) {
+        return false;
+    }
+
+    used_len += (size_t)written_len;
+    if (used_len >= buf_len) {
+        return false;
+    }
+
     return true;
 }
 
-bool packet_out_decode(uint8_t (*buffer)[PACKET_OUT_SIZE], packet_out_t* packet)
+bool packet_out_decode(const uint8_t (*buffer)[PACKET_OUT_SIZE],
+                       packet_out_t* packet)
 {
     if (packet == NULL || buffer == NULL) {
         return false;
+    }
+
+    char const* buf = (char const*)buffer;
+
+    int type;
+    int scanned_num = sscanf(buf, "{%*[^:]: %d", &type);
+    if (scanned_num != 1) {
+        return false;
+    }
+    packet->type = (packet_out_type_t)type;
+
+    if (packet->type == PACKET_OUT_TYPE_MEASURE) {
+        float temperature = 0.0F;
+        float pressure = 0.0F;
+        float humidity = 0.0F;
+        scanned_num = sscanf(buf,
+                             "%*[^t]temperature\": %f,%*[^s]pressure\": %f, "
+                             "%*[^s]humidity\": %f",
+                             &temperature,
+                             &pressure,
+                             &humidity);
+        if (scanned_num != 2) {
+            return false;
+        }
+        packet->payload.measure.temperature = temperature;
+        packet->payload.measure.pressure = pressure;
+        packet->payload.measure.humidity = humidity;
     }
 
     return true;
