@@ -7,7 +7,7 @@
 #include <stdint.h>
 
 typedef struct {
-    
+    UART_HandleTypeDef* packet_uart_bus;
 } packet_config_t;
 
 typedef struct {

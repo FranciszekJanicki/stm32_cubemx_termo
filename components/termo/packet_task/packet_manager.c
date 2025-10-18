@@ -8,6 +8,45 @@
 
 static char const* const TAG = "packet_manager";
 
+static inline bool packet_manager_transmit_packet_out(
+    packet_manager_t* manager,
+    packet_out_t const* packet)
+{
+    TERMO_ASSERT(manager != NULL);
+    TERMO_ASSERT(packet != NULL);
+
+    uint8_t buffer[PACKET_OUT_SIZE];
+    memset(buffer, 0, sizeof(buffer));
+
+    if (!packet_out_encode(packet, &buffer)) {
+        return false;
+    }
+
+    return HAL_UART_Transmit(manager->config.packet_uart_bus,
+                             buffer,
+                             sizeof(buffer),
+                             100) == HAL_OK;
+}
+
+static inline bool packet_manager_receive_packet_in(packet_manager_t* manager,
+                                                    packet_in_t* packet)
+{
+    TERMO_ASSERT(manager != NULL);
+    TERMO_ASSERT(packet != NULL);
+
+    uint8_t buffer[PACKET_IN_SIZE];
+    memset(buffer, 0, sizeof(buffer));
+
+    if (HAL_UART_Receive(manager->config.packet_uart_bus,
+                         buffer,
+                         sizeof(buffer),
+                         100) != HAL_OK) {
+        return false;
+    }
+
+    return packet_in_decode(&buffer, packet);
+}
+
 static inline bool packet_manager_send_system_event(system_event_t const* event)
 {
     TERMO_ASSERT(event != NULL);
@@ -112,10 +151,9 @@ static termo_err_t packet_manager_event_measure_handler(
                             .humidity = measure->humidity,
                             .pressure = measure->pressure}};
 
-    uint8_t buffer[PACKET_OUT_SIZE] = {0};
-    packet_out_encode(&packet, &buffer);
-
-    CDC_Transmit_FS(buffer, PACKET_OUT_SIZE);
+    if (!packet_manager_transmit_packet_out(manager, &packet)) {
+        return TERMO_ERR_FAIL;
+    }
 
     return TERMO_ERR_OK;
 }
@@ -146,6 +184,16 @@ static termo_err_t packet_manager_event_handler(packet_manager_t* manager,
     }
 }
 
+static termo_err_t packet_manager_packet_in_handler(packet_manager_t* manager,
+                                                    packet_in_t const* packet)
+{
+    TERMO_LOG_FUNC(TAG);
+    TERMO_ASSERT(manager != NULL);
+    TERMO_ASSERT(packet != NULL);
+
+    switch (packet->type) {}
+}
+
 termo_err_t packet_manager_process(packet_manager_t* manager)
 {
     TERMO_ASSERT(manager != NULL);
@@ -160,6 +208,11 @@ termo_err_t packet_manager_process(packet_manager_t* manager)
         if (packet_manager_receive_packet_event(&event)) {
             TERMO_RET_ON_ERR(packet_manager_event_handler(manager, &event));
         }
+    }
+
+    packet_in_t packet;
+    if (packet_manager_receive_packet_in(manager, &packet)) {
+        packet_manager_packet_in_handler(manager, &packet);
     }
 
     return TERMO_ERR_OK;
@@ -180,6 +233,20 @@ termo_err_t packet_manager_initialize(packet_manager_t* manager,
     if (!packet_manager_send_system_event(&event)) {
         return TERMO_ERR_FAIL;
     }
+
+#ifdef PACKET_IN_TEST
+    char json[] = "{"
+                  "packet_type : 0,"
+                  "packet_payload : {"
+                  "\"temperature\": 25.0,"
+                  "\"sampling_time\": 0.0,"
+                  "}"
+                  "}";
+#endif
+
+#ifdef PACKET_OUT_TEST
+
+#endif
 
     return TERMO_ERR_OK;
 }

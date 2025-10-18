@@ -1,4 +1,5 @@
 #include "main.h"
+#include "config.h"
 #include "gpio.h"
 #include "i2c.h"
 #include "spi.h"
@@ -9,27 +10,26 @@
 
 static termo_ctx_t config = {
     .system_ctx = {.config = {}},
-    .termo_ctx = {.config = {.delta_timer = &htim2,
-                             .mcp9808_i2c_bus = &hi2c1,
-                             .mcp9808_i2c_address =
-                                 MCP9808_SLAVE_ADDRESS_A2L_A1L_A0L,
-                             .pwm_timer = &htim3,
-                             .pwm_channel = TIM_CHANNEL_2},
-                  .params = {.kp = 10.0F,
-                             .ki = 0.5F,
-                             .kd = 1.0F,
-                             .kc = 0.1F,
-                             .min_temp = 0.0F,
-                             .max_temp = 100.0F,
-                             .sampling_time = 1.0F}},
+    .termo_ctx = {.config = {.delta_timer = DELTA_TIMER,
+                             .mcp9808_i2c_bus = MCP9808_I2C_BUS,
+                             .mcp9808_i2c_address = MCP9808_I2C_ADDRESS,
+                             .pwm_timer = PWM_TIMER,
+                             .pwm_channel = PWM_CHANNEL},
+                  .params = {.kp = PROP_GAIN,
+                             .ki = INT_GAIN,
+                             .kd = DOT_GAIN,
+                             .kc = SAT_GAIN,
+                             .min_temp = MIN_CONTROL,
+                             .max_temp = MAX_CONTROL,
+                             .sampling_time = SAMPLING_TIME}},
     .display_ctx = {
-        .config = {.sh1107_spi_bus = &hspi3,
-                   .sh1107_control_gpio = SH1107_CONTROL_GPIO_Port,
-                   .sh1107_control_pin = SH1107_CONTROL_Pin,
-                   .sh1107_reset_gpio = SH1107_RESET_GPIO_Port,
-                   .sh1107_reset_pin = SH1107_RESET_Pin,
-                   .sh1107_slave_select_gpio = SH1107_SLAVE_SELECT_GPIO_Port,
-                   .sh1107_slave_select_pin = SH1107_SLAVE_SELECT_Pin}}};
+        .config = {.sh1107_spi_bus = SH1107_SPI_BUS,
+                   .sh1107_control_gpio = SH1107_CONTROL_GPIO,
+                   .sh1107_control_pin = SH1107_CONTROL_PIN,
+                   .sh1107_reset_gpio = SH1107_RESET_GPIO,
+                   .sh1107_reset_pin = SH1107_RESET_PIN,
+                   .sh1107_slave_select_gpio = SH1107_SLAVE_SELECT_GPIO,
+                   .sh1107_slave_select_pin = SH1107_SLAVE_SELECT_PIN}}};
 
 void SystemClock_Config(void);
 
