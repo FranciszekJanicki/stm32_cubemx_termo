@@ -132,29 +132,28 @@ bool packet_out_decode(const uint8_t (*buffer)[PACKET_OUT_SIZE],
 #else
 
 bool packet_out_encode(packet_out_t const* packet,
-                       uint8_t (*buffer)[PACKET_OUT_SIZE])
+                       char* buffer,
+                       size_t buffer_len)
 {
-    if (buffer == NULL || packet == NULL) {
+    if (packet == NULL || buffer == NULL || buffer_len == 0UL) {
         return false;
     }
 
-    char* buf = (char*)buffer;
-    size_t buf_len = PACKET_OUT_SIZE;
     size_t used_len = 0UL;
 
     int written_len =
-        snprintf(buf + used_len, buf_len - used_len, "{\n", packet->type);
+        snprintf(buffer + used_len, buffer_len - used_len, "{\n", packet->type);
     if (written_len < 0) {
         return false;
     }
 
     used_len += (size_t)written_len;
-    if (used_len >= buf_len) {
+    if (used_len >= buffer_len) {
         return false;
     }
 
-    written_len = snprintf(buf + used_len,
-                           buf_len - used_len,
+    written_len = snprintf(buffer + used_len,
+                           buffer_len - used_len,
                            "packet_type: %d\n",
                            packet->type);
     if (written_len < 0) {
@@ -162,13 +161,13 @@ bool packet_out_encode(packet_out_t const* packet,
     }
 
     used_len += (size_t)written_len;
-    if (used_len >= buf_len) {
+    if (used_len >= buffer_len) {
         return false;
     }
 
     if (packet->type == PACKET_OUT_TYPE_MEASURE) {
-        written_len = snprintf(buf + used_len,
-                               buf_len - used_len,
+        written_len = snprintf(buffer + used_len,
+                               buffer_len - used_len,
                                "  \"packet_payload\": {\n"
                                "    \"temperature\": %.2f,\n"
                                "    \"pressure\": %.2f\n"
@@ -183,35 +182,39 @@ bool packet_out_encode(packet_out_t const* packet,
     }
 
     used_len += (size_t)written_len;
-    if (used_len >= buf_len) {
+    if (used_len >= buffer_len) {
         return false;
     }
 
     written_len =
-        snprintf(buf + used_len, buf_len - used_len, "}\n", packet->type);
+        snprintf(buffer + used_len, buffer_len - used_len, "}\n", packet->type);
     if (written_len < 0) {
         return false;
     }
 
     used_len += (size_t)written_len;
-    if (used_len >= buf_len) {
+    if (used_len >= buffer_len) {
         return false;
     }
 
+    buffer[used_len] = '\0';
     return true;
 }
 
-bool packet_out_decode(const uint8_t (*buffer)[PACKET_OUT_SIZE],
+bool packet_out_decode(char const* buffer,
+                       size_t buffer_len,
                        packet_out_t* packet)
 {
-    if (packet == NULL || buffer == NULL) {
+    if (buffer == NULL || buffer_len == 0UL || packet == NULL) {
         return false;
     }
 
-    char const* buf = (char const*)buffer;
+    if (strlen(buffer) != buffer_len) {
+        return false;
+    }
 
     int type;
-    int scanned_num = sscanf(buf, "{%*[^:]: %d", &type);
+    int scanned_num = sscanf(buffer, "{%*[^:]: %d", &type);
     if (scanned_num != 1) {
         return false;
     }
@@ -221,7 +224,7 @@ bool packet_out_decode(const uint8_t (*buffer)[PACKET_OUT_SIZE],
         float temperature = 0.0F;
         float pressure = 0.0F;
         float humidity = 0.0F;
-        scanned_num = sscanf(buf,
+        scanned_num = sscanf(buffer,
                              "%*[^t]temperature\": %f,%*[^s]pressure\": %f, "
                              "%*[^s]humidity\": %f",
                              &temperature,

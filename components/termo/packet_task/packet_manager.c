@@ -15,16 +15,16 @@ static inline bool packet_manager_transmit_packet_out(
     TERMO_ASSERT(manager != NULL);
     TERMO_ASSERT(packet != NULL);
 
-    uint8_t buffer[PACKET_OUT_SIZE];
+    char buffer[100];
     memset(buffer, 0, sizeof(buffer));
 
-    if (!packet_out_encode(packet, &buffer)) {
+    if (!packet_out_encode(packet, buffer, sizeof(buffer))) {
         return false;
     }
 
     return HAL_UART_Transmit(manager->config.packet_uart_bus,
                              buffer,
-                             sizeof(buffer),
+                             strlen(buffer),
                              100) == HAL_OK;
 }
 
@@ -34,7 +34,7 @@ static inline bool packet_manager_receive_packet_in(packet_manager_t* manager,
     TERMO_ASSERT(manager != NULL);
     TERMO_ASSERT(packet != NULL);
 
-    uint8_t buffer[PACKET_IN_SIZE];
+    char buffer[100];
     memset(buffer, 0, sizeof(buffer));
 
     if (HAL_UART_Receive(manager->config.packet_uart_bus,
@@ -44,7 +44,7 @@ static inline bool packet_manager_receive_packet_in(packet_manager_t* manager,
         return false;
     }
 
-    return packet_in_decode(&buffer, packet);
+    return packet_in_decode(buffer, strlen(buffer), packet);
 }
 
 static inline bool packet_manager_send_system_event(system_event_t const* event)
@@ -235,13 +235,22 @@ termo_err_t packet_manager_initialize(packet_manager_t* manager,
     }
 
 #ifdef PACKET_IN_TEST
-    char json[] = "{"
-                  "packet_type : 0,"
-                  "packet_payload : {"
-                  "\"temperature\": 25.0,"
-                  "\"sampling_time\": 0.0,"
-                  "}"
-                  "}";
+    char buffer[] = "{"
+                    "packet_type : 0,"
+                    "packet_payload : {"
+                    "\"temperature\": 25.0,"
+                    "\"sampling_time\": 0.0,"
+                    "}"
+                    "}";
+    packet_in_t packet;
+    packet_in_decode(buffer, strlen(buffer), &packet);
+
+    TERMO_LOG(TAG,
+              "packet_type: %d",
+              packet.type,
+              "packet_payload: %temperature, %sampling_time",
+              packet.payload.reference.temperature,
+              packet.payload.reference.sampling_time);
 #endif
 
 #ifdef PACKET_OUT_TEST

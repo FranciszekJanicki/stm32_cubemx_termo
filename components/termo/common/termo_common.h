@@ -9,5 +9,7 @@
 #include "termo_utility.h"
 
 // #define USE_BINARY_PACKETS
+#define PACKET_IN_TEST
+#define PACKET_OUT_TEST
 
 #endif // COMMON_TERMO_COMMON_H
