@@ -186,7 +186,8 @@ bool packet_out_decode(char const* buffer,
         float humidity = 0.0F;
         scanned_num = sscanf(buffer,
                              "{\"packet_type\":%d,"
-                             "\"packet_payload\":{\"temperature\":%f,"
+                             "\"packet_payload\":{"
+                             "\"temperature\":%f,"
                              "\"pressure\":%f,"
                              "\"humidity\":%f}}\n",
                              &type,

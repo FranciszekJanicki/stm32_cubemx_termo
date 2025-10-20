@@ -2,8 +2,8 @@
 #define COMMON_UTILITY_H
 
 #include "FreeRTOS.h"
-#include "termo_log.h"
 #include "task.h"
+#include "termo_log.h"
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>

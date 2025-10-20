@@ -1,3 +1,4 @@
+#include "config.h"
 #include "termo_common.h"
 #include "usart.h"
 #include <errno.h>
@@ -36,20 +37,22 @@ void _exit(int status)
 int _read(int file, char* ptr, int len)
 {
     (void)file;
-    HAL_UART_Receive(&huart2, (uint8_t*)ptr, len, len);
+#ifdef DEBUG
+    HAL_UART_Receive(LOG_UART_BUS, (uint8_t*)ptr, len, len);
+#endif
     return len;
 }
 
 int _write(int file, char* ptr, int len)
 {
     (void)file;
-
+#ifdef DEBUG
     if (xSemaphoreTake(termo_semaphore_manager_get(TERMO_SEMAPHORE_TYPE_LOG),
                        pdMS_TO_TICKS(10)) == pdPASS) {
-        HAL_UART_Transmit(&huart2, (uint8_t*)ptr, len, len);
+        HAL_UART_Transmit(LOG_UART_BUS, (uint8_t*)ptr, len, len);
         xSemaphoreGive(termo_semaphore_manager_get(TERMO_SEMAPHORE_TYPE_LOG));
     }
-
+#endif
     return len;
 }
 

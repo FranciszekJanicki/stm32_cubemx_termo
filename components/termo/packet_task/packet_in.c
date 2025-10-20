@@ -174,7 +174,8 @@ bool packet_in_decode(char const* buffer,
         float sampling_time = 0.0F;
         scanned_num = sscanf(buffer,
                              "{\"packet_type\":%d,"
-                             "\"packet_payload\":{\"temperature\":%f,"
+                             "\"packet_payload\":{"
+                             "\"temperature\":%f,"
                              "\"sampling_time\":%f}}\n",
                              &type,
                              &temperature,

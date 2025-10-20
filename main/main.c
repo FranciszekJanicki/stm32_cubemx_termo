@@ -22,6 +22,7 @@ static termo_ctx_t config = {
                              .min_temp = MIN_CONTROL,
                              .max_temp = MAX_CONTROL,
                              .sampling_time = SAMPLING_TIME}},
+    .packet_ctx = {.config = {.packet_uart_bus = PACKET_UART_BUS}},
     .display_ctx = {
         .config = {.sh1107_spi_bus = SH1107_SPI_BUS,
                    .sh1107_control_gpio = SH1107_CONTROL_GPIO,

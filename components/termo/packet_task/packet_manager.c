@@ -34,15 +34,28 @@ static inline bool packet_manager_receive_packet_in(packet_manager_t* manager,
     TERMO_ASSERT(manager != NULL);
     TERMO_ASSERT(packet != NULL);
 
-    char buffer[100];
+    char buffer[1000];
     memset(buffer, 0, sizeof(buffer));
 
+#ifdef PACKET_IN_TEST
+    snprintf(buffer,
+             sizeof(buffer),
+             "{\"packet_type\":%d,"
+             "\"packet_payload\":{\"temperature\":%f,"
+             "\"sampling_time\":%f}}\n",
+             0,
+             25.0F,
+             0.001F);
+
+    TERMO_LOG(TAG, "packet_in_test: %s", buffer);
+#else
     if (HAL_UART_Receive(manager->config.packet_uart_bus,
                          buffer,
                          sizeof(buffer),
                          100) != HAL_OK) {
         return false;
     }
+#endif
 
     return packet_in_decode(buffer, strlen(buffer), packet);
 }
@@ -145,6 +158,10 @@ static termo_err_t packet_manager_event_measure_handler(
     TERMO_ASSERT(manager != NULL);
     TERMO_ASSERT(measure != NULL);
 
+    if (!manager->is_running) {
+        return TERMO_ERR_NOT_RUNNING;
+    }
+
     packet_out_t packet = {
         .type = PACKET_OUT_TYPE_MEASURE,
         .payload.measure = {.temperature = measure->temperature,
@@ -184,6 +201,30 @@ static termo_err_t packet_manager_event_handler(packet_manager_t* manager,
     }
 }
 
+static termo_err_t packet_manager_packet_in_reference_handler(
+    packet_manager_t* manager,
+    packet_in_payload_reference_t const* reference)
+{
+    TERMO_LOG_FUNC(TAG);
+    TERMO_ASSERT(manager != NULL);
+    TERMO_ASSERT(reference != NULL);
+
+    if (!manager->is_running) {
+        return TERMO_ERR_NOT_RUNNING;
+    }
+
+    system_event_t event = {
+        .origin = SYSTEM_EVENT_ORIGIN_PACKET,
+        .type = SYSTEM_EVENT_TYPE_TERMO_REFERENCE,
+        .payload.termo_reference = {.temperature = reference->temperature,
+                                    .sampling_time = reference->sampling_time}};
+    if (!packet_manager_send_system_event(&event)) {
+        return TERMO_ERR_FAIL;
+    }
+
+    return TERMO_ERR_OK;
+}
+
 static termo_err_t packet_manager_packet_in_handler(packet_manager_t* manager,
                                                     packet_in_t const* packet)
 {
@@ -191,7 +232,16 @@ static termo_err_t packet_manager_packet_in_handler(packet_manager_t* manager,
     TERMO_ASSERT(manager != NULL);
     TERMO_ASSERT(packet != NULL);
 
-    switch (packet->type) {}
+    switch (packet->type) {
+        case PACKET_IN_TYPE_REFERENCE: {
+            return packet_manager_packet_in_reference_handler(
+                manager,
+                &packet->payload.reference);
+        }
+        default: {
+            return TERMO_ERR_UNKNOWN_EVENT;
+        }
+    }
 }
 
 termo_err_t packet_manager_process(packet_manager_t* manager)
