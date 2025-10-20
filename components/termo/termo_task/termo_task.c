@@ -1,8 +1,8 @@
+#include "termo_task.h"
 #include "FreeRTOS.h"
 #include "queue.h"
 #include "task.h"
 #include "termo_common.h"
-#include "termo_task.h"
 
 #define TERMO_TASK_STACK_DEPTH (5000UL / sizeof(StackType_t))
 #define TERMO_TASK_NAME ("termo_task")
@@ -61,13 +61,13 @@ termo_err_t termo_task_initialize(termo_task_ctx_t const* task_ctx)
     if (termo_task == NULL) {
         return TERMO_ERR_FAIL;
     }
-    termo_task_manager_set(TERMO_TASK_TYPE_CONTROL, termo_task);
+    termo_task_manager_set(TERMO_TASK_TYPE_TERMO, termo_task);
 
     QueueHandle_t termo_queue = termo_task_create_termo_queue();
     if (termo_queue == NULL) {
         return TERMO_ERR_FAIL;
     }
-    termo_queue_manager_set(TERMO_QUEUE_TYPE_CONTROL, termo_queue);
+    termo_queue_manager_set(TERMO_QUEUE_TYPE_TERMO, termo_queue);
 
     return TERMO_ERR_OK;
 }
@@ -75,7 +75,7 @@ termo_err_t termo_task_initialize(termo_task_ctx_t const* task_ctx)
 void termo_task_delta_timer_callback(void)
 {
     BaseType_t task_woken = pdFALSE;
-    xTaskNotifyFromISR(termo_task_manager_get(TERMO_TASK_TYPE_CONTROL),
+    xTaskNotifyFromISR(termo_task_manager_get(TERMO_TASK_TYPE_TERMO),
                        TERMO_NOTIFY_DELTA_TIMER,
                        eSetBits,
                        &task_woken);

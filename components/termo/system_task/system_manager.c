@@ -18,7 +18,7 @@ static inline bool system_manager_send_termo_event(termo_event_t const* event)
 {
     TERMO_ASSERT(event != NULL);
 
-    return xQueueSend(termo_queue_manager_get(TERMO_QUEUE_TYPE_CONTROL),
+    return xQueueSend(termo_queue_manager_get(TERMO_QUEUE_TYPE_TERMO),
                       event,
                       pdMS_TO_TICKS(10)) == pdPASS;
 }
@@ -73,9 +73,12 @@ static termo_err_t system_manager_event_termo_ready_handler(
     TERMO_ASSERT(manager != NULL);
     TERMO_ASSERT(termo_ready != NULL);
 
-    termo_event_t event = {.type = TERMO_EVENT_TYPE_START, .payload.start = {}};
-    if (!system_manager_send_termo_event(&event)) {
-        return TERMO_ERR_FAIL;
+    if (!manager->is_termo_running) {
+        termo_event_t event = {.type = TERMO_EVENT_TYPE_START,
+                               .payload.start = {}};
+        if (!system_manager_send_termo_event(&event)) {
+            return TERMO_ERR_FAIL;
+        }
     }
 
     return TERMO_ERR_OK;
@@ -135,7 +138,8 @@ static termo_err_t system_manager_termo_reference_handler(
         display_event_t event = {
             .type = DISPLAY_EVENT_TYPE_REFERENCE,
             .payload.reference = {.temperature = termo_reference->temperature,
-                                  .sampling_time = termo_reference->sampling_time}};
+                                  .sampling_time =
+                                      termo_reference->sampling_time}};
         if (!system_manager_send_display_event(&event)) {
             return TERMO_ERR_FAIL;
         }
@@ -163,7 +167,7 @@ static termo_err_t system_manager_termo_measure_handler(
     if (manager->measure_humidity == termo_measure->humidity &&
         manager->measure_pressure == termo_measure->pressure &&
         manager->measure_temperature == termo_measure->temperature) {
-        return TERMO_ERR_OK;
+        // return TERMO_ERR_OK;
     }
 
     if (manager->is_display_running) {
@@ -202,6 +206,96 @@ static termo_err_t system_manager_termo_measure_handler(
     return TERMO_ERR_OK;
 }
 
+static termo_err_t system_manager_event_packet_ready_handler(
+    system_manager_t* manager,
+    system_event_payload_packet_ready_t const* packet_ready)
+{
+    TERMO_LOG_FUNC(TAG);
+    TERMO_ASSERT(manager != NULL);
+    TERMO_ASSERT(packet_ready != NULL);
+
+    if (!manager->is_packet_running) {
+        packet_event_t event = {.type = PACKET_EVENT_TYPE_START,
+                                .payload.start = {}};
+        if (!system_manager_send_packet_event(&event)) {
+            return TERMO_ERR_FAIL;
+        }
+    }
+
+    return TERMO_ERR_OK;
+}
+
+static termo_err_t system_manager_event_packet_started_handler(
+    system_manager_t* manager,
+    system_event_payload_packet_started_t const* packet_started)
+{
+    TERMO_LOG_FUNC(TAG);
+    TERMO_ASSERT(manager != NULL);
+    TERMO_ASSERT(packet_started != NULL);
+
+    manager->is_packet_running = true;
+
+    return TERMO_ERR_OK;
+}
+
+static termo_err_t system_manager_event_packet_stopped_handler(
+    system_manager_t* manager,
+    system_event_payload_packet_stopped_t const* packet_stopped)
+{
+    TERMO_LOG_FUNC(TAG);
+    TERMO_ASSERT(manager != NULL);
+    TERMO_ASSERT(packet_stopped != NULL);
+
+    manager->is_packet_running = false;
+
+    return TERMO_ERR_OK;
+}
+
+static termo_err_t system_manager_event_display_ready_handler(
+    system_manager_t* manager,
+    system_event_payload_display_ready_t const* display_ready)
+{
+    TERMO_LOG_FUNC(TAG);
+    TERMO_ASSERT(manager != NULL);
+    TERMO_ASSERT(display_ready != NULL);
+
+    if (!manager->is_display_running) {
+        display_event_t event = {.type = DISPLAY_EVENT_TYPE_START,
+                                 .payload.start = {}};
+        if (!system_manager_send_display_event(&event)) {
+            return TERMO_ERR_FAIL;
+        }
+    }
+
+    return TERMO_ERR_OK;
+}
+
+static termo_err_t system_manager_event_display_started_handler(
+    system_manager_t* manager,
+    system_event_payload_display_started_t const* display_started)
+{
+    TERMO_LOG_FUNC(TAG);
+    TERMO_ASSERT(manager != NULL);
+    TERMO_ASSERT(display_started != NULL);
+
+    manager->is_display_running = true;
+
+    return TERMO_ERR_OK;
+}
+
+static termo_err_t system_manager_event_display_stopped_handler(
+    system_manager_t* manager,
+    system_event_payload_display_stopped_t const* display_stopped)
+{
+    TERMO_LOG_FUNC(TAG);
+    TERMO_ASSERT(manager != NULL);
+    TERMO_ASSERT(display_stopped != NULL);
+
+    manager->is_display_running = false;
+
+    return TERMO_ERR_OK;
+}
+
 static termo_err_t system_manager_event_handler(system_manager_t* manager,
                                                 system_event_t const* event)
 {
@@ -233,6 +327,36 @@ static termo_err_t system_manager_event_handler(system_manager_t* manager,
             return system_manager_termo_measure_handler(
                 manager,
                 &event->payload.termo_measure);
+        }
+        case SYSTEM_EVENT_TYPE_PACKET_READY: {
+            return system_manager_event_packet_ready_handler(
+                manager,
+                &event->payload.packet_ready);
+        }
+        case SYSTEM_EVENT_TYPE_PACKET_STARTED: {
+            return system_manager_event_packet_started_handler(
+                manager,
+                &event->payload.packet_started);
+        }
+        case SYSTEM_EVENT_TYPE_PACKET_STOPPED: {
+            return system_manager_event_packet_stopped_handler(
+                manager,
+                &event->payload.packet_stopped);
+        }
+        case SYSTEM_EVENT_TYPE_DISPLAY_READY: {
+            return system_manager_event_display_ready_handler(
+                manager,
+                &event->payload.display_ready);
+        }
+        case SYSTEM_EVENT_TYPE_DISPLAY_STARTED: {
+            return system_manager_event_display_started_handler(
+                manager,
+                &event->payload.display_started);
+        }
+        case SYSTEM_EVENT_TYPE_DISPLAY_STOPPED: {
+            return system_manager_event_display_stopped_handler(
+                manager,
+                &event->payload.display_stopped);
         }
         default: {
             return TERMO_ERR_UNKNOWN_EVENT;

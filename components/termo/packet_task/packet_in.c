@@ -129,63 +129,24 @@ bool packet_in_encode(packet_in_t const* packet,
         return false;
     }
 
-    size_t used_len = 0UL;
-
-    int written_len =
-        snprintf(buffer + used_len, buffer_len - used_len, "{\n", packet->type);
-    if (written_len < 0) {
-        return false;
-    }
-
-    used_len += (size_t)written_len;
-    if (used_len >= buffer_len) {
-        return false;
-    }
-
-    written_len = snprintf(buffer + used_len,
-                           buffer_len - used_len,
-                           "packet_type: %d\n",
-                           packet->type);
-    if (written_len < 0) {
-        return false;
-    }
-
-    used_len += (size_t)written_len;
-    if (used_len >= buffer_len) {
-        return false;
-    }
-
+    int written_len = 0;
     if (packet->type == PACKET_IN_TYPE_REFERENCE) {
-        written_len = snprintf(buffer + used_len,
-                               buffer_len - used_len,
-                               "  \"packet_payload\": {\n"
-                               "    \"temperature\": %.2f,\n"
-                               "    \"sampling_time\": %.2f\n"
-                               "  }\n",
+        written_len = snprintf(buffer,
+                               buffer_len,
+                               "{\"packet_type\":%d,"
+                               "\"packet_payload\":{"
+                               "\"temperature\":%f,"
+                               "\"sampling_time\":%f}}\n",
+                               packet->type,
                                packet->payload.reference.temperature,
                                packet->payload.reference.sampling_time);
     }
-    if (written_len < 0) {
+
+    if (written_len < 0 || (size_t)written_len >= buffer_len) {
         return false;
     }
 
-    used_len += (size_t)written_len;
-    if (used_len >= buffer_len) {
-        return false;
-    }
-
-    written_len =
-        snprintf(buffer + used_len, buffer_len - used_len, "}\n", packet->type);
-    if (written_len < 0) {
-        return false;
-    }
-
-    used_len += (size_t)written_len;
-    if (used_len >= buffer_len) {
-        return false;
-    }
-
-    buffer[used_len] = '\0';
+    buffer[written_len] = '\0';
     return true;
 }
 
@@ -202,7 +163,7 @@ bool packet_in_decode(char const* buffer,
     }
 
     int type;
-    int scanned_num = sscanf(buffer, "{%*[^:]: %d", &type);
+    int scanned_num = sscanf(buffer, "{\"packet_type\":%d", &type);
     if (scanned_num != 1) {
         return false;
     }
@@ -211,12 +172,14 @@ bool packet_in_decode(char const* buffer,
     if (packet->type == PACKET_IN_TYPE_REFERENCE) {
         float temperature = 0.0F;
         float sampling_time = 0.0F;
-        scanned_num =
-            sscanf(buffer,
-                   "%*[^t]temperature\": %f,%*[^s]sampling_time\": %f",
-                   &temperature,
-                   &sampling_time);
-        if (scanned_num != 2) {
+        scanned_num = sscanf(buffer,
+                             "{\"packet_type\":%d,"
+                             "\"packet_payload\":{\"temperature\":%f,"
+                             "\"sampling_time\":%f}}\n",
+                             &type,
+                             &temperature,
+                             &sampling_time);
+        if (scanned_num != 3) {
             return false;
         }
         packet->payload.reference.temperature = temperature;

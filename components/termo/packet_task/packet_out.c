@@ -139,40 +139,16 @@ bool packet_out_encode(packet_out_t const* packet,
         return false;
     }
 
-    size_t used_len = 0UL;
-
-    int written_len =
-        snprintf(buffer + used_len, buffer_len - used_len, "{\n", packet->type);
-    if (written_len < 0) {
-        return false;
-    }
-
-    used_len += (size_t)written_len;
-    if (used_len >= buffer_len) {
-        return false;
-    }
-
-    written_len = snprintf(buffer + used_len,
-                           buffer_len - used_len,
-                           "packet_type: %d\n",
-                           packet->type);
-    if (written_len < 0) {
-        return false;
-    }
-
-    used_len += (size_t)written_len;
-    if (used_len >= buffer_len) {
-        return false;
-    }
-
+    int written_len = 0;
     if (packet->type == PACKET_OUT_TYPE_MEASURE) {
-        written_len = snprintf(buffer + used_len,
-                               buffer_len - used_len,
-                               "  \"packet_payload\": {\n"
-                               "    \"temperature\": %.2f,\n"
-                               "    \"pressure\": %.2f\n"
-                               "    \"humidity\": %.2f\n"
-                               "  }\n",
+        written_len = snprintf(buffer,
+                               buffer_len,
+                               "{\"packet_type\":%d,"
+                               "\"packet_payload\":{"
+                               "\"temperature\":%f,"
+                               "\"pressure\":%f,"
+                               "\"humidity\":%f}}\n",
+                               packet->type,
                                packet->payload.measure.temperature,
                                packet->payload.measure.pressure,
                                packet->payload.measure.humidity);
@@ -181,23 +157,7 @@ bool packet_out_encode(packet_out_t const* packet,
         return false;
     }
 
-    used_len += (size_t)written_len;
-    if (used_len >= buffer_len) {
-        return false;
-    }
-
-    written_len =
-        snprintf(buffer + used_len, buffer_len - used_len, "}\n", packet->type);
-    if (written_len < 0) {
-        return false;
-    }
-
-    used_len += (size_t)written_len;
-    if (used_len >= buffer_len) {
-        return false;
-    }
-
-    buffer[used_len] = '\0';
+    buffer[written_len] = '\0';
     return true;
 }
 
@@ -214,7 +174,7 @@ bool packet_out_decode(char const* buffer,
     }
 
     int type;
-    int scanned_num = sscanf(buffer, "{%*[^:]: %d", &type);
+    int scanned_num = sscanf(buffer, "{\"packet_type\":%d", &type);
     if (scanned_num != 1) {
         return false;
     }
@@ -225,12 +185,15 @@ bool packet_out_decode(char const* buffer,
         float pressure = 0.0F;
         float humidity = 0.0F;
         scanned_num = sscanf(buffer,
-                             "%*[^t]temperature\": %f,%*[^s]pressure\": %f, "
-                             "%*[^s]humidity\": %f",
+                             "{\"packet_type\":%d,"
+                             "\"packet_payload\":{\"temperature\":%f,"
+                             "\"pressure\":%f,"
+                             "\"humidity\":%f}}\n",
+                             &type,
                              &temperature,
                              &pressure,
                              &humidity);
-        if (scanned_num != 2) {
+        if (scanned_num != 4) {
             return false;
         }
         packet->payload.measure.temperature = temperature;

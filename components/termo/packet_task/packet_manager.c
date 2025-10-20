@@ -234,28 +234,5 @@ termo_err_t packet_manager_initialize(packet_manager_t* manager,
         return TERMO_ERR_FAIL;
     }
 
-#ifdef PACKET_IN_TEST
-    char buffer[] = "{"
-                    "packet_type : 0,"
-                    "packet_payload : {"
-                    "\"temperature\": 25.0,"
-                    "\"sampling_time\": 0.0,"
-                    "}"
-                    "}";
-    packet_in_t packet;
-    packet_in_decode(buffer, strlen(buffer), &packet);
-
-    TERMO_LOG(TAG,
-              "packet_type: %d",
-              packet.type,
-              "packet_payload: %temperature, %sampling_time",
-              packet.payload.reference.temperature,
-              packet.payload.reference.sampling_time);
-#endif
-
-#ifdef PACKET_OUT_TEST
-
-#endif
-
     return TERMO_ERR_OK;
 }

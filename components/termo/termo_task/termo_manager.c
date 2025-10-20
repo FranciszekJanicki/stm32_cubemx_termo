@@ -167,14 +167,14 @@ static inline bool termo_manager_receive_termo_notify(termo_notify_t* notify)
 static inline bool termo_manager_has_termo_event(void)
 {
     return uxQueueMessagesWaiting(
-               termo_queue_manager_get(TERMO_QUEUE_TYPE_CONTROL)) > 0UL;
+               termo_queue_manager_get(TERMO_QUEUE_TYPE_TERMO)) > 0UL;
 }
 
 static inline bool termo_manager_receive_termo_event(termo_event_t* event)
 {
     TERMO_ASSERT(event != NULL);
 
-    return xQueueReceive(termo_queue_manager_get(TERMO_QUEUE_TYPE_CONTROL),
+    return xQueueReceive(termo_queue_manager_get(TERMO_QUEUE_TYPE_TERMO),
                          event,
                          pdMS_TO_TICKS(10)) == pdPASS;
 }
@@ -237,6 +237,16 @@ static termo_err_t termo_manager_notify_temp_ready_handler(
 
     manager->measurement = measurement;
 
+    system_event_t event = {
+        .origin = SYSTEM_EVENT_ORIGIN_TERMO,
+        .type = SYSTEM_EVENT_TYPE_TERMO_MEASURE,
+        .payload.termo_measure = {.temperature = measurement,
+                                  .humidity = 0.0F,
+                                  .pressure = 0.0F}};
+    if (!termo_manager_send_system_event(&event)) {
+        return TERMO_ERR_FAIL;
+    }
+
     return TERMO_ERR_OK;
 }
 
@@ -275,7 +285,7 @@ static termo_err_t termo_manager_event_start_handler(
         return TERMO_ERR_FAIL;
     }
 
-    system_event_t event = {.origin = SYSTEM_EVENT_ORIGIN_CONTROL,
+    system_event_t event = {.origin = SYSTEM_EVENT_ORIGIN_TERMO,
                             .type = SYSTEM_EVENT_TYPE_TERMO_STARTED,
                             .payload.termo_started = {}};
     if (!termo_manager_send_system_event(&event)) {
@@ -307,7 +317,7 @@ static termo_err_t termo_manager_event_stop_handler(
         return TERMO_ERR_FAIL;
     }
 
-    system_event_t event = {.origin = SYSTEM_EVENT_ORIGIN_CONTROL,
+    system_event_t event = {.origin = SYSTEM_EVENT_ORIGIN_TERMO,
                             .type = SYSTEM_EVENT_TYPE_TERMO_STOPPED,
                             .payload.termo_stopped = {}};
     if (!termo_manager_send_system_event(&event)) {
@@ -375,7 +385,7 @@ termo_err_t termo_manager_process(termo_manager_t* manager)
         }
     }
 
-    xTaskNotify(termo_task_manager_get(TERMO_TASK_TYPE_CONTROL),
+    xTaskNotify(termo_task_manager_get(TERMO_TASK_TYPE_TERMO),
                 TERMO_NOTIFY_TEMP_READY,
                 eSetBits);
 
@@ -391,7 +401,7 @@ termo_err_t termo_manager_initialize(termo_manager_t* manager,
     TERMO_ASSERT(params != NULL);
 
     manager->is_running = false;
-    manager->delta_time = 0.0F;
+    manager->delta_time = 0.001F;
     manager->reference = 0.0F;
     manager->measurement = 0.0F;
     manager->config = *config;
@@ -426,7 +436,7 @@ termo_err_t termo_manager_initialize(termo_manager_t* manager,
         TERMO_LOG(TAG, "Failed pid_regulator_initialize!");
     }
 
-    system_event_t event = {.origin = SYSTEM_EVENT_ORIGIN_CONTROL,
+    system_event_t event = {.origin = SYSTEM_EVENT_ORIGIN_TERMO,
                             .type = SYSTEM_EVENT_TYPE_TERMO_READY,
                             .payload.termo_ready = {}};
     if (!termo_manager_send_system_event(&event)) {
