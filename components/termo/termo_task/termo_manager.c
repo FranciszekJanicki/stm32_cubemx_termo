@@ -127,7 +127,7 @@ static inline bool termo_manager_set_pwm_timer_compare(termo_manager_t* manager,
 
     __HAL_TIM_SET_COMPARE(manager->config.pwm_timer,
                           manager->config.pwm_channel,
-                          compare & 0xFFFFU);
+                          0xFFFF & 0xFFFFU);
     return true;
 }
 
@@ -402,7 +402,7 @@ termo_err_t termo_manager_initialize(termo_manager_t* manager,
 
     manager->is_running = false;
     manager->delta_time = 0.001F;
-    manager->reference = 0.0F;
+    manager->reference = 30.0F;
     manager->measurement = 0.0F;
     manager->config = *config;
 
