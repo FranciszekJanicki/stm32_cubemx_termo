@@ -24,6 +24,13 @@ typedef struct {
 
     sh1107_t sh1107;
     uint8_t sh1107_frame_buffer[SH1107_FRAME_BUFFER_SIZE];
+
+    float reference_temperature;
+    float sampling_time;
+
+    float measure_temperature;
+    float measure_pressure;
+    float measure_humidity;
 } display_manager_t;
 
 termo_err_t display_manager_process(display_manager_t* manager);

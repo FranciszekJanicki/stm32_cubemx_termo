@@ -127,7 +127,7 @@ static inline bool termo_manager_set_pwm_timer_compare(termo_manager_t* manager,
 
     __HAL_TIM_SET_COMPARE(manager->config.pwm_timer,
                           manager->config.pwm_channel,
-                          0xFFFF & 0xFFFFU);
+                          compare & 0xFFFFU);
     return true;
 }
 

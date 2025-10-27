@@ -190,13 +190,22 @@ static termo_err_t display_manager_event_reference_handler(
     TERMO_ASSERT(manager != NULL);
     TERMO_ASSERT(reference != NULL);
 
+    manager->reference_temperature = reference->temperature;
+    manager->sampling_time = reference->sampling_time;
+
+    sh1107_clear_frame_buffer(&manager->sh1107);
     sh1107_draw_string_formatted(
         &manager->sh1107,
         0,
         0,
-        "Reference temperature: %.2f C, sampling time: %.2f s",
-        reference->temperature,
-        reference->sampling_time);
+        "Reference temperature: %.2f [*C], sampling time: %.2f [s]\n",
+        "Measure temperature: %.2f [*C], pressure: %.2f [hPA], humidity: %.2f "
+        "[\%]\n",
+        manager->reference_temperature,
+        manager->sampling_time,
+        manager->measure_temperature,
+        manager->measure_pressure,
+        manager->measure_humidity);
 
     return TERMO_ERR_OK;
 }
@@ -209,14 +218,23 @@ static termo_err_t display_manager_event_measure_handler(
     TERMO_ASSERT(manager != NULL);
     TERMO_ASSERT(measure != NULL);
 
+    manager->measure_temperature = measure->temperature;
+    manager->measure_pressure = measure->pressure;
+    manager->measure_humidity = measure->humidity;
+
+    sh1107_clear_frame_buffer(&manager->sh1107);
     sh1107_draw_string_formatted(
         &manager->sh1107,
         0,
-        10,
-        "Measure temperature: %.2f C, humidity: %.2f %%, pressure: %.2f hPa",
-        measure->temperature,
-        measure->humidity,
-        measure->pressure);
+        0,
+        "Reference temperature: %.2f [*C], sampling time: %.2f [s]\n",
+        "Measure temperature: %.2f [*C], pressure: %.2f [hPA], humidity: %.2f "
+        "[\%]\n",
+        manager->reference_temperature,
+        manager->sampling_time,
+        manager->measure_temperature,
+        manager->measure_pressure,
+        manager->measure_humidity);
 
     return TERMO_ERR_OK;
 }
@@ -299,9 +317,6 @@ termo_err_t display_manager_initialize(display_manager_t* manager,
                               .gpio_deinitialize = sh1107_gpio_deinitialize,
                               .gpio_write = sh1107_gpio_write});
     sh1107_initialize_chip(&manager->sh1107);
-    sh1107_draw_string(&manager->sh1107, 0, 0, "DUPA ZBITA");
-    sh1107_draw_string(&manager->sh1107, 30, 30, "DUPA CIPA");
-    sh1107_display_frame_buffer(&manager->sh1107);
 
     system_event_t event = {.origin = SYSTEM_EVENT_ORIGIN_DISPLAY,
                             .type = SYSTEM_EVENT_TYPE_DISPLAY_READY,
