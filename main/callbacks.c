@@ -1,6 +1,7 @@
 #include "stm32l476xx.h"
 #include "stm32l4xx_hal.h"
 #include "termo_task.h"
+#include "config.h"
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef* htim)
 {
