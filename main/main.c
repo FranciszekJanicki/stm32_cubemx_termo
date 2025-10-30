@@ -6,7 +6,6 @@
 #include "termo.h"
 #include "tim.h"
 #include "usart.h"
-#include "usb_device.h"
 
 static termo_ctx_t config = {
     .system_ctx = {.config = {}},
@@ -45,8 +44,7 @@ int main(void)
     MX_TIM2_Init();
     MX_TIM3_Init();
     MX_SPI3_Init();
-    MX_USB_DEVICE_Init();
-
+    
     HAL_Delay(100U);
 
     termo_initialize(&config);

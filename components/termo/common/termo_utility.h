@@ -8,7 +8,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define DEBUG
+// #define DEBUG
 
 #define TERMO_DELAY(MS) vTaskDelay(pdMS_TO_TICKS(MS))
 

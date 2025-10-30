@@ -2,8 +2,6 @@
 #include "packet_in.h"
 #include "packet_out.h"
 #include "termo_common.h"
-#include "usb_device.h"
-#include "usbd_cdc_if.h"
 #include <string.h>
 
 static char const* const TAG = "packet_manager";
