@@ -259,6 +259,11 @@ static termo_err_t display_manager_event_handler(display_manager_t* manager,
                 manager,
                 &event->payload.reference);
         }
+        case DISPLAY_EVENT_TYPE_MEASURE: {
+            return display_manager_event_measure_handler(
+                manager,
+                &event->payload.measure);
+        }
         default: {
             return TERMO_ERR_UNKNOWN_EVENT;
         }

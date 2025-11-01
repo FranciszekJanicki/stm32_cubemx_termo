@@ -13,7 +13,7 @@ static inline bool packet_manager_transmit_packet_out(
     TERMO_ASSERT(manager != NULL);
     TERMO_ASSERT(packet != NULL);
 
-    char buffer[100];
+    char buffer[1000];
     memset(buffer, 0, sizeof(buffer));
 
     if (!packet_out_encode(packet, buffer, sizeof(buffer))) {
@@ -23,7 +23,7 @@ static inline bool packet_manager_transmit_packet_out(
     return HAL_UART_Transmit(manager->config.packet_uart_bus,
                              buffer,
                              strlen(buffer),
-                             100) == HAL_OK;
+                             strlen(buffer)) == HAL_OK;
 }
 
 static inline bool packet_manager_receive_packet_in(packet_manager_t* manager,
@@ -47,13 +47,17 @@ static inline bool packet_manager_receive_packet_in(packet_manager_t* manager,
 
     TERMO_LOG(TAG, "packet_in_test: %s", buffer);
 #else
-    if (HAL_UART_Receive(manager->config.packet_uart_bus,
-                         buffer,
-                         sizeof(buffer),
-                         100) != HAL_OK) {
-        return false;
-    }
+    // if(
+    HAL_UART_Receive(manager->config.packet_uart_bus,
+                     buffer,
+                     sizeof(buffer),
+                     sizeof(buffer));
+    //                       != HAL_OK) {
+    //     return false;
+    // }
 #endif
+
+    TERMO_LOG(TAG, "received: %s", buffer);
 
     return packet_in_decode(buffer, strlen(buffer), packet);
 }

@@ -56,29 +56,30 @@ int main(void)
     // stdout -> USART2 TX
     // stderr -> USART1 TX
 
-    while (1) {
-        memset(write_buffer, 0xFF, sizeof(write_buffer));
+    // while (1) {
+    //     memset(write_buffer, 0xFF, sizeof(write_buffer));
 
-        strncpy(write_buffer + sizeof(write_buffer) - strlen("\n\r") - 1,
-                "\n\r",
-                strlen("\n\r"));
-        write_buffer[sizeof(write_buffer) - 1] = '\0';
-        fwrite(write_buffer,
-               sizeof(*write_buffer),
-               sizeof(write_buffer),
-               stderr);
+    //     strncpy(write_buffer + sizeof(write_buffer) - strlen("\n\r") - 1,
+    //             "\n\r",
+    //             strlen("\n\r"));
+    //     write_buffer[sizeof(write_buffer) - 1] = '\0';
+    //     fwrite(write_buffer,
+    //            sizeof(*write_buffer),
+    //            sizeof(write_buffer),
+    //            stderr);
 
-        fread(read_buffer, sizeof(*read_buffer), sizeof(read_buffer), stdin);
+    //     fread(read_buffer, sizeof(*read_buffer), sizeof(read_buffer), stdin);
 
-        strncpy(read_buffer + sizeof(read_buffer) - strlen("\n\r") - 1,
-                "\n\r",
-                strlen("\n\r"));
-        read_buffer[sizeof(read_buffer) - 1] = '\0';
-        fwrite(read_buffer, sizeof(*read_buffer), sizeof(read_buffer), stdout);
+    //     strncpy(read_buffer + sizeof(read_buffer) - strlen("\n\r") - 1,
+    //             "\n\r",
+    //             strlen("\n\r"));
+    //     read_buffer[sizeof(read_buffer) - 1] = '\0';
+    //     fwrite(read_buffer, sizeof(*read_buffer), sizeof(read_buffer),
+    //     stdout);
 
-        memset(write_buffer, 0, sizeof(write_buffer));
-        memset(read_buffer, 0, sizeof(read_buffer));
-    }
+    //     memset(write_buffer, 0, sizeof(write_buffer));
+    //     memset(read_buffer, 0, sizeof(read_buffer));
+    // }
 
     termo_initialize(&config);
 }

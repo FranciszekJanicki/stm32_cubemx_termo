@@ -143,11 +143,11 @@ bool packet_out_encode(packet_out_t const* packet,
     if (packet->type == PACKET_OUT_TYPE_MEASURE) {
         written_len = snprintf(buffer,
                                buffer_len,
-                               "{\"packet_type\":%d,"
-                               "\"packet_payload\":{"
-                               "\"temperature\":%f,"
-                               "\"pressure\":%f,"
-                               "\"humidity\":%f}}\n",
+                               "{\"packet_type\": %d,"
+                               "\"packet_payload\": {"
+                               "\"temperature\": %f,"
+                               "\"pressure\": %f,"
+                               "\"humidity\": %f}}\n",
                                packet->type,
                                packet->payload.measure.temperature,
                                packet->payload.measure.pressure,
@@ -174,7 +174,7 @@ bool packet_out_decode(char const* buffer,
     }
 
     int type;
-    int scanned_num = sscanf(buffer, "{\"packet_type\":%d", &type);
+    int scanned_num = sscanf(buffer, "{\"packet_type\": %d", &type);
     if (scanned_num != 1) {
         return false;
     }
@@ -185,11 +185,11 @@ bool packet_out_decode(char const* buffer,
         float pressure = 0.0F;
         float humidity = 0.0F;
         scanned_num = sscanf(buffer,
-                             "{\"packet_type\":%d,"
-                             "\"packet_payload\":{"
-                             "\"temperature\":%f,"
-                             "\"pressure\":%f,"
-                             "\"humidity\":%f}}\n",
+                             "{\"packet_type\": %d,"
+                             "\"packet_payload\": {"
+                             "\"temperature\": %f,"
+                             "\"pressure\": %f,"
+                             "\"humidity\": %f}}\n",
                              &type,
                              &temperature,
                              &pressure,

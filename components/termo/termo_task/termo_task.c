@@ -76,7 +76,7 @@ void termo_task_delta_timer_callback(void)
 {
     BaseType_t task_woken = pdFALSE;
     xTaskNotifyFromISR(termo_task_manager_get(TERMO_TASK_TYPE_TERMO),
-                       TERMO_NOTIFY_DELTA_TIMER,
+                       TERMO_NOTIFY_DELTA_TIMER | TERMO_NOTIFY_TEMP_READY,
                        eSetBits,
                        &task_woken);
     portYIELD_FROM_ISR(task_woken);

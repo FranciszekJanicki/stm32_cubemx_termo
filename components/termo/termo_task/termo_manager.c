@@ -228,11 +228,11 @@ static termo_err_t termo_manager_notify_temp_ready_handler(
     TERMO_LOG_FUNC(TAG);
     TERMO_ASSERT(manager != NULL);
 
-    float measurement;
+    float measurement = 0.0F;
     if (mcp9808_get_temp_data_scaled(&manager->mcp9808, &measurement) !=
         MCP9808_ERR_OK) {
         TERMO_LOG(TAG, "Failed mcp9808_get_temp_data_scaled!");
-        return TERMO_ERR_FAIL;
+        // return TERMO_ERR_FAIL;
     }
 
     manager->measurement = measurement;
@@ -384,10 +384,6 @@ termo_err_t termo_manager_process(termo_manager_t* manager)
             TERMO_RET_ON_ERR(termo_manager_event_handler(manager, &event));
         }
     }
-
-    xTaskNotify(termo_task_manager_get(TERMO_TASK_TYPE_TERMO),
-                TERMO_NOTIFY_TEMP_READY,
-                eSetBits);
 
     return TERMO_ERR_OK;
 }

@@ -5,7 +5,7 @@
 #include "task.h"
 #include "termo_common.h"
 
-#define PACKET_TASK_STACK_DEPTH (5000UL / sizeof(StackType_t))
+#define PACKET_TASK_STACK_DEPTH (10000UL / sizeof(StackType_t))
 #define PACKET_TASK_NAME ("packet_task")
 #define PACKET_TASK_PRIORITY (1UL)
 
