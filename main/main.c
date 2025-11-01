@@ -6,6 +6,7 @@
 #include "termo.h"
 #include "tim.h"
 #include "usart.h"
+#include <string.h>
 
 static termo_ctx_t config = {
     .system_ctx = {.config = {}},
@@ -39,13 +40,45 @@ int main(void)
     SystemClock_Config();
 
     MX_GPIO_Init();
+    MX_USART1_UART_Init();
     MX_USART2_UART_Init();
     MX_I2C1_Init();
     MX_TIM2_Init();
     MX_TIM3_Init();
     MX_SPI3_Init();
-    
+
     HAL_Delay(100U);
+
+    char read_buffer[100];
+    char write_buffer[100];
+
+    // stdin -> USART1 RX
+    // stdout -> USART2 TX
+    // stderr -> USART1 TX
+
+    while (1) {
+        memset(write_buffer, 0xFF, sizeof(write_buffer));
+
+        strncpy(write_buffer + sizeof(write_buffer) - strlen("\n\r") - 1,
+                "\n\r",
+                strlen("\n\r"));
+        write_buffer[sizeof(write_buffer) - 1] = '\0';
+        fwrite(write_buffer,
+               sizeof(*write_buffer),
+               sizeof(write_buffer),
+               stderr);
+
+        fread(read_buffer, sizeof(*read_buffer), sizeof(read_buffer), stdin);
+
+        strncpy(read_buffer + sizeof(read_buffer) - strlen("\n\r") - 1,
+                "\n\r",
+                strlen("\n\r"));
+        read_buffer[sizeof(read_buffer) - 1] = '\0';
+        fwrite(read_buffer, sizeof(*read_buffer), sizeof(read_buffer), stdout);
+
+        memset(write_buffer, 0, sizeof(write_buffer));
+        memset(read_buffer, 0, sizeof(read_buffer));
+    }
 
     termo_initialize(&config);
 }

@@ -37,22 +37,36 @@ void _exit(int status)
 int _read(int file, char* ptr, int len)
 {
     (void)file;
-#ifdef DEBUG
-    HAL_UART_Receive(LOG_UART_BUS, (uint8_t*)ptr, len, len);
-#endif
+
+    if (file == 0) {
+        // if
+        // (xSemaphoreTake(termo_semaphore_manager_get(TERMO_SEMAPHORE_TYPE_LOG),
+        //    pdMS_TO_TICKS(10)) == pdPASS) {
+        HAL_UART_Receive(PACKET_UART_BUS, (uint8_t*)ptr, len, len);
+        //     xSemaphoreGive(termo_semaphore_manager_get(TERMO_SEMAPHORE_TYPE_LOG));
+        // }
+    }
+
     return len;
 }
 
 int _write(int file, char* ptr, int len)
 {
     (void)file;
-#ifdef DEBUG
-    if (xSemaphoreTake(termo_semaphore_manager_get(TERMO_SEMAPHORE_TYPE_LOG),
-                       pdMS_TO_TICKS(10)) == pdPASS) {
+
+    if (file == 1) {
+        // if
+        // (xSemaphoreTake(termo_semaphore_manager_get(TERMO_SEMAPHORE_TYPE_LOG),
+        //    pdMS_TO_TICKS(10)) == pdPASS)
+        //    {
+
         HAL_UART_Transmit(LOG_UART_BUS, (uint8_t*)ptr, len, len);
-        xSemaphoreGive(termo_semaphore_manager_get(TERMO_SEMAPHORE_TYPE_LOG));
+        //     xSemaphoreGive(termo_semaphore_manager_get(TERMO_SEMAPHORE_TYPE_LOG));
+        // }
+    } else if (file == 2) {
+        HAL_UART_Transmit(PACKET_UART_BUS, (uint8_t*)ptr, len, len);
     }
-#endif
+
     return len;
 }
 

@@ -32,6 +32,6 @@
 #define SH1107_SLAVE_SELECT_PIN (1U << 6U)
 
 #define LOG_UART_BUS (&huart2)
-#define PACKET_UART_BUS (&huart2)
+#define PACKET_UART_BUS (&huart1)
 
 #endif // MAIN_CONFIG_H
