@@ -13,7 +13,7 @@ static inline bool packet_manager_transmit_packet_out(
     TERMO_ASSERT(manager != NULL);
     TERMO_ASSERT(packet != NULL);
 
-    char buffer[1000];
+    char buffer[100];
     memset(buffer, 0, sizeof(buffer));
 
     if (!packet_out_encode(packet, buffer, sizeof(buffer))) {
@@ -21,9 +21,9 @@ static inline bool packet_manager_transmit_packet_out(
     }
 
     return HAL_UART_Transmit(manager->config.packet_uart_bus,
-                             buffer,
-                             strlen(buffer),
-                             strlen(buffer)) == HAL_OK;
+                             (uint8_t*)buffer,
+                             sizeof(buffer),
+                             HAL_MAX_DELAY) == HAL_OK;
 }
 
 static inline bool packet_manager_receive_packet_in(packet_manager_t* manager,
@@ -32,7 +32,7 @@ static inline bool packet_manager_receive_packet_in(packet_manager_t* manager,
     TERMO_ASSERT(manager != NULL);
     TERMO_ASSERT(packet != NULL);
 
-    char buffer[1000];
+    char buffer[100];
     memset(buffer, 0, sizeof(buffer));
 
 #ifdef PACKET_IN_TEST
@@ -47,14 +47,23 @@ static inline bool packet_manager_receive_packet_in(packet_manager_t* manager,
 
     TERMO_LOG(TAG, "packet_in_test: %s", buffer);
 #else
-    // if(
-    HAL_UART_Receive(manager->config.packet_uart_bus,
-                     buffer,
-                     sizeof(buffer),
-                     sizeof(buffer));
-    //                       != HAL_OK) {
-    //     return false;
-    // }
+    uint32_t tick = HAL_GetTick();
+    size_t index = 0UL;
+    uint8_t byte;
+
+    while (HAL_GetTick() - tick < 500U) {
+        if (HAL_UART_Receive(manager->config.packet_uart_bus,
+                             &byte,
+                             sizeof(byte),
+                             10U) == HAL_OK) {
+            if (byte == '\n' || index >= sizeof(buffer) - 1UL) {
+                break;
+            }
+
+            buffer[index++] = (char)byte;
+        }
+    }
+    buffer[index] = '\0';
 #endif
 
     TERMO_LOG(TAG, "received: %s", buffer);

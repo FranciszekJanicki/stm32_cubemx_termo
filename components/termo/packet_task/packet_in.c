@@ -159,7 +159,7 @@ bool packet_in_decode(char const* buffer,
     }
 
     if (strlen(buffer) != buffer_len) {
-        return false;
+      //  return false;
     }
 
     int type;
