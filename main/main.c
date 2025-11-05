@@ -45,7 +45,7 @@ int main(void)
     MX_I2C1_Init();
     MX_TIM2_Init();
     MX_TIM3_Init();
-    MX_SPI3_Init();
+    MX_SPI1_Init();
 
     HAL_Delay(100U);
 

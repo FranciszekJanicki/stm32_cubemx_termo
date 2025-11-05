@@ -1,8 +1,8 @@
 #ifndef PACKET_TASK_PACKET_MANAGER_H
 #define PACKET_TASK_PACKET_MANAGER_H
 
-#include "stm32f446xx.h"
-#include "stm32f4xx_hal.h"
+#include "stm32l476xx.h"
+#include "stm32l4xx_hal.h"
 #include "termo_common.h"
 #include <stdint.h>
 

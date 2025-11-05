@@ -23,7 +23,7 @@
 #define MAX_CONTROL (100.0F)
 #define SAMPLING_TIME (1.0F)
 
-#define SH1107_SPI_BUS (&hspi3)
+#define SH1107_SPI_BUS (&hspi1)
 #define SH1107_CONTROL_GPIO (GPIOC)
 #define SH1107_CONTROL_PIN (1U << 7U)
 #define SH1107_RESET_GPIO (GPIOC)

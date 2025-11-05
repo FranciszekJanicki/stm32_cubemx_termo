@@ -22,7 +22,7 @@ static inline bool packet_manager_transmit_packet_out(
 
     return HAL_UART_Transmit(manager->config.packet_uart_bus,
                              (uint8_t*)buffer,
-                             sizeof(buffer),
+                             strlen(buffer),
                              HAL_MAX_DELAY) == HAL_OK;
 }
 
