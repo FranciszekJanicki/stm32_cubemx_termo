@@ -153,6 +153,9 @@ static termo_err_t display_manager_event_start_handler(
         return TERMO_ERR_FAIL;
     }
 
+    sh1107_clear_frame_buffer(&manager->sh1107);
+    sh1107_display_frame_buffer(&manager->sh1107);
+
     manager->is_running = true;
 
     return TERMO_ERR_OK;
@@ -177,6 +180,9 @@ static termo_err_t display_manager_event_stop_handler(
         return TERMO_ERR_FAIL;
     }
 
+    sh1107_clear_frame_buffer(&manager->sh1107);
+    sh1107_display_frame_buffer(&manager->sh1107);
+
     manager->is_running = false;
 
     return TERMO_ERR_OK;
@@ -193,19 +199,19 @@ static termo_err_t display_manager_event_reference_handler(
     manager->reference_temperature = reference->temperature;
     manager->sampling_time = reference->sampling_time;
 
-    sh1107_clear_frame_buffer(&manager->sh1107);
-    sh1107_draw_string_formatted(
-        &manager->sh1107,
-        0,
-        0,
-        "Reference temperature: %.2f [*C], sampling time: %.2f [s]\n",
-        "Measure temperature: %.2f [*C], pressure: %.2f [hPA], humidity: %.2f "
-        "[\%]\n",
-        manager->reference_temperature,
-        manager->sampling_time,
-        manager->measure_temperature,
-        manager->measure_pressure,
-        manager->measure_humidity);
+    sh1107_draw_string_formatted(&manager->sh1107, 0, 0, "Reference: ");
+    sh1107_draw_string_formatted(&manager->sh1107,
+                                 0,
+                                 5,
+                                 "-temperature: %.2f [*C]",
+                                 manager->reference_temperature);
+    sh1107_draw_string_formatted(&manager->sh1107,
+                                 0,
+                                 10,
+                                 "-sampling_time: %.2f [s]",
+                                 manager->sampling_time);
+
+    sh1107_display_frame_buffer(&manager->sh1107);
 
     return TERMO_ERR_OK;
 }
@@ -222,19 +228,24 @@ static termo_err_t display_manager_event_measure_handler(
     manager->measure_pressure = measure->pressure;
     manager->measure_humidity = measure->humidity;
 
-    sh1107_clear_frame_buffer(&manager->sh1107);
-    sh1107_draw_string_formatted(
-        &manager->sh1107,
-        0,
-        0,
-        "Reference temperature: %.2f [*C], sampling time: %.2f [s]\n",
-        "Measure temperature: %.2f [*C], pressure: %.2f [hPA], humidity: %.2f "
-        "[\%]\n",
-        manager->reference_temperature,
-        manager->sampling_time,
-        manager->measure_temperature,
-        manager->measure_pressure,
-        manager->measure_humidity);
+    sh1107_draw_string_formatted(&manager->sh1107, 0, 15, "Measure: ");
+    sh1107_draw_string_formatted(&manager->sh1107,
+                                 0,
+                                 20,
+                                 "-temperature: %.2f [*C]",
+                                 manager->measure_temperature);
+    sh1107_draw_string_formatted(&manager->sh1107,
+                                 0,
+                                 25,
+                                 "-pressure: %.2f [*C]",
+                                 manager->measure_pressure);
+    sh1107_draw_string_formatted(&manager->sh1107,
+                                 0,
+                                 30,
+                                 "-humidity: %.2f [\%]",
+                                 manager->measure_humidity);
+
+    sh1107_display_frame_buffer(&manager->sh1107);
 
     return TERMO_ERR_OK;
 }

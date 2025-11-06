@@ -36,8 +36,6 @@ void _exit(int status)
 
 int _read(int file, char* ptr, int len)
 {
-    (void)file;
-
     if (file == 0) {
         HAL_UART_Receive(PACKET_UART_BUS, (uint8_t*)ptr, len, len);
     }
@@ -47,12 +45,10 @@ int _read(int file, char* ptr, int len)
 
 int _write(int file, char* ptr, int len)
 {
-    (void)file;
-
     if (file == 1) {
         if (xSemaphoreTake(
                 termo_semaphore_manager_get(TERMO_SEMAPHORE_TYPE_LOG),
-                pdMS_TO_TICKS(10)) == pdPASS) {
+                pdMS_TO_TICKS(100)) == pdPASS) {
             HAL_UART_Transmit(LOG_UART_BUS, (uint8_t*)ptr, len, len);
             xSemaphoreGive(
                 termo_semaphore_manager_get(TERMO_SEMAPHORE_TYPE_LOG));
