@@ -1,6 +1,7 @@
 #ifndef COMMON_PACKET_OUT_H
 #define COMMON_PACKET_OUT_H
 
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 

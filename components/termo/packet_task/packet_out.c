@@ -173,32 +173,56 @@ bool packet_out_decode(char const* buffer,
         return false;
     }
 
+    char const* str = strstr(buffer, "\"packet_type\"");
+    if (str == NULL) {
+        return false;
+    }
+
     int type;
-    int scanned_num = sscanf(buffer, "{\"packet_type\": %d", &type);
+    int scanned_num = sscanf(str, "\"packet_type\": %d", &type);
     if (scanned_num != 1) {
         return false;
     }
+
     packet->type = (packet_out_type_t)type;
 
     if (packet->type == PACKET_OUT_TYPE_MEASURE) {
-        float temperature = 0.0F;
-        float pressure = 0.0F;
-        float humidity = 0.0F;
-        scanned_num = sscanf(buffer,
-                             "{\"packet_type\": %d,"
-                             "\"packet_payload\": {"
-                             "\"temperature\": %f,"
-                             "\"pressure\": %f,"
-                             "\"humidity\": %f}}\n",
-                             &type,
-                             &temperature,
-                             &pressure,
-                             &humidity);
-        if (scanned_num != 4) {
+        str = strstr(buffer, "\"temperature\"");
+        if (str == NULL) {
             return false;
         }
+
+        float temperature = 0.0F;
+        scanned_num = sscanf(str, "\"temperature\": %f", &temperature);
+        if (scanned_num != 1) {
+            return false;
+        }
+
         packet->payload.measure.temperature = temperature;
+
+        str = strstr(buffer, "\"pressure\"");
+        if (str == NULL) {
+            return false;
+        }
+
+        float pressure = 0.0F;
+        scanned_num = sscanf(str, "\"pressure\": %f", &pressure);
+        if (scanned_num != 1) {
+            return false;
+        }
+
         packet->payload.measure.pressure = pressure;
+
+        str = strstr(buffer, "\"humidity\"");
+        if (str == NULL) {
+            return false;
+        }
+
+        float humidity = 0.0F;
+        scanned_num = sscanf(str, "\"humidity\": %f", &humidity);
+        if (scanned_num != 1) {
+            return false;
+        }
         packet->payload.measure.humidity = humidity;
     }
 

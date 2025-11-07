@@ -6,6 +6,7 @@
 #include "termo.h"
 #include "tim.h"
 #include "usart.h"
+#include <locale.h>
 #include <string.h>
 
 static termo_ctx_t config = {
@@ -36,6 +37,8 @@ void SystemClock_Config(void);
 
 int main(void)
 {
+    setlocale(LC_NUMERIC, "C");
+
     HAL_Init();
     SystemClock_Config();
 
@@ -49,13 +52,13 @@ int main(void)
 
     HAL_Delay(100U);
 
-    char read_buffer[100];
-    char write_buffer[100];
+    // stdin->USART1 RX stdout->USART2 TX stderr->USART1 TX
 
-    // stdin -> USART1 RX
-    // stdout -> USART2 TX
-    // stderr -> USART1 TX
+    HAL_TIM_PWM_Start(PWM_TIMER, PWM_CHANNEL);
+    __HAL_TIM_SET_COMPARE(PWM_TIMER, PWM_CHANNEL, (uint16_t)(65535.0F / 2.0F));
 
+    // char read_buffer[100];
+    // char write_buffer[100];
     // while (1) {
     //     memset(write_buffer, 0xFF, sizeof(write_buffer));
 
@@ -68,14 +71,19 @@ int main(void)
     //            sizeof(write_buffer),
     //            stderr);
 
-    //     fread(read_buffer, sizeof(*read_buffer), sizeof(read_buffer), stdin);
+    //     fread(read_buffer,
+    //           sizeof(*read_buffer),
+    //           sizeof(read_buffer) - 1,
+    //           stdin);
 
     //     strncpy(read_buffer + sizeof(read_buffer) - strlen("\n\r") - 1,
     //             "\n\r",
     //             strlen("\n\r"));
     //     read_buffer[sizeof(read_buffer) - 1] = '\0';
-    //     fwrite(read_buffer, sizeof(*read_buffer), sizeof(read_buffer),
-    //     stdout);
+    //     fwrite(read_buffer,
+    //            sizeof(*read_buffer),
+    //            sizeof(read_buffer) - 1,
+    //            stdout);
 
     //     memset(write_buffer, 0, sizeof(write_buffer));
     //     memset(read_buffer, 0, sizeof(read_buffer));

@@ -34,30 +34,81 @@ void _exit(int status)
     }
 }
 
-int _read(int file, char* ptr, int len)
+[[__attribute_used__]] int _read(int file, char* ptr, int len)
 {
-    if (file == 0) {
-        HAL_UART_Receive(PACKET_UART_BUS, (uint8_t*)ptr, len, len);
+    if (file != 0) {
+        errno = EBADF;
+        return -1;
     }
 
-    return len;
+    if (ptr == NULL || len <= 0) {
+        errno = EINVAL;
+        return -1;
+    }
+
+    HAL_StatusTypeDef hal =
+        HAL_UART_Receive(PACKET_UART_BUS, (uint8_t*)ptr, (uint16_t)len, 100);
+    if (hal == HAL_OK) {
+        return len;
+    }
+
+    if (hal == HAL_TIMEOUT) {
+        return 0;
+    }
+
+    errno = EIO;
+    return -1;
 }
 
-int _write(int file, char* ptr, int len)
+[[__attribute_used__]] int _write(int file, char* ptr, int len)
 {
-    if (file == 1) {
-        if (xSemaphoreTake(
-                termo_semaphore_manager_get(TERMO_SEMAPHORE_TYPE_LOG),
-                pdMS_TO_TICKS(100)) == pdPASS) {
-            HAL_UART_Transmit(LOG_UART_BUS, (uint8_t*)ptr, len, len);
-            xSemaphoreGive(
-                termo_semaphore_manager_get(TERMO_SEMAPHORE_TYPE_LOG));
-        }
-    } else if (file == 2) {
-        HAL_UART_Transmit(PACKET_UART_BUS, (uint8_t*)ptr, len, len);
+    if (ptr == NULL || len <= 0) {
+        errno = EINVAL;
+        return -1;
     }
 
-    return len;
+    if (file == 1) {
+        if (xTaskGetSchedulerState() == taskSCHEDULER_RUNNING) {
+            if (xSemaphoreTake(
+                    termo_semaphore_manager_get(TERMO_SEMAPHORE_TYPE_LOG),
+                    pdMS_TO_TICKS(100)) == pdPASS) {
+                HAL_StatusTypeDef hal = HAL_UART_Transmit(LOG_UART_BUS,
+                                                          (uint8_t*)ptr,
+                                                          (uint16_t)len,
+                                                          100);
+                xSemaphoreGive(
+                    termo_semaphore_manager_get(TERMO_SEMAPHORE_TYPE_LOG));
+                if (hal == HAL_OK)
+                    return len;
+                errno = EIO;
+                return -1;
+            } else {
+                errno = EBUSY;
+                return -1;
+            }
+        } else {
+            HAL_StatusTypeDef hal = HAL_UART_Transmit(LOG_UART_BUS,
+                                                      (uint8_t*)ptr,
+                                                      (uint16_t)len,
+                                                      10);
+            if (hal == HAL_OK)
+                return len;
+            errno = EIO;
+            return -1;
+        }
+    } else if (file == 2) {
+        HAL_StatusTypeDef hal = HAL_UART_Transmit(PACKET_UART_BUS,
+                                                  (uint8_t*)ptr,
+                                                  (uint16_t)len,
+                                                  100);
+        if (hal == HAL_OK)
+            return len;
+        errno = EIO;
+        return -1;
+    } else {
+        errno = EBADF;
+        return -1;
+    }
 }
 
 int _close(int file)

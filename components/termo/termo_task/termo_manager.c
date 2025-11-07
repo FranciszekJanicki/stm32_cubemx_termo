@@ -211,13 +211,13 @@ static termo_err_t termo_manager_notify_delta_timer_handler(
         return TERMO_ERR_FAIL;
     }
 
-    TERMO_LOG(TAG,
-              "Ref: %.2fC, Meas: %.2fC, Err: %.2fC, Ctrl: %.2fC, Comp: %lu",
-              manager->reference,
-              manager->measurement,
-              error_temperature,
-              termo_temperature,
-              compare);
+    // TERMO_LOG(TAG,
+    //           "Ref: %.2fC, Meas: %.2fC, Err: %.2fC, Ctrl: %.2fC, Comp: %lu",
+    //           manager->reference,
+    //           manager->measurement,
+    //           error_temperature,
+    //           termo_temperature,
+    //           compare);
 
     return TERMO_ERR_OK;
 }

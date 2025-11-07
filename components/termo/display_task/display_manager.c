@@ -38,13 +38,19 @@ static sh1107_err_t sh1107_gpio_initialize(void* user)
 
     HAL_GPIO_WritePin(config->sh1107_slave_select_gpio,
                       config->sh1107_slave_select_pin,
-                      GPIO_PIN_RESET);
+                      GPIO_PIN_SET);
 
     return SH1107_ERR_OK;
 }
 
 static sh1107_err_t sh1107_gpio_deinitialize(void* user)
 {
+    display_config_t* config = (display_config_t*)user;
+
+    HAL_GPIO_WritePin(config->sh1107_slave_select_gpio,
+                      config->sh1107_slave_select_pin,
+                      GPIO_PIN_RESET);
+
     return SH1107_ERR_OK;
 }
 
@@ -199,15 +205,18 @@ static termo_err_t display_manager_event_reference_handler(
     manager->reference_temperature = reference->temperature;
     manager->sampling_time = reference->sampling_time;
 
-    sh1107_draw_string_formatted(&manager->sh1107, 0, 0, "Reference: ");
     sh1107_draw_string_formatted(&manager->sh1107,
                                  0,
-                                 5,
+                                 1 * FONT5X7_LINE_HEIGHT,
+                                 "Reference: ");
+    sh1107_draw_string_formatted(&manager->sh1107,
+                                 0,
+                                 2 * FONT5X7_LINE_HEIGHT,
                                  "-temperature: %.2f [*C]",
                                  manager->reference_temperature);
     sh1107_draw_string_formatted(&manager->sh1107,
                                  0,
-                                 10,
+                                 3 * FONT5X7_LINE_HEIGHT,
                                  "-sampling_time: %.2f [s]",
                                  manager->sampling_time);
 
@@ -228,21 +237,24 @@ static termo_err_t display_manager_event_measure_handler(
     manager->measure_pressure = measure->pressure;
     manager->measure_humidity = measure->humidity;
 
-    sh1107_draw_string_formatted(&manager->sh1107, 0, 15, "Measure: ");
     sh1107_draw_string_formatted(&manager->sh1107,
                                  0,
-                                 20,
+                                 5 * FONT5X7_LINE_HEIGHT,
+                                 "Measure: ");
+    sh1107_draw_string_formatted(&manager->sh1107,
+                                 0,
+                                 6 * FONT5X7_LINE_HEIGHT,
                                  "-temperature: %.2f [*C]",
                                  manager->measure_temperature);
     sh1107_draw_string_formatted(&manager->sh1107,
                                  0,
-                                 25,
-                                 "-pressure: %.2f [*C]",
+                                 7 * FONT5X7_LINE_HEIGHT,
+                                 "-pressure: %.2f [hPa]",
                                  manager->measure_pressure);
     sh1107_draw_string_formatted(&manager->sh1107,
                                  0,
-                                 30,
-                                 "-humidity: %.2f [\%]",
+                                 8 * FONT5X7_LINE_HEIGHT,
+                                 "-humidity: %.2f [%%]",
                                  manager->measure_humidity);
 
     sh1107_display_frame_buffer(&manager->sh1107);

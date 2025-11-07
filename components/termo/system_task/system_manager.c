@@ -120,7 +120,7 @@ static termo_err_t system_manager_termo_reference_handler(
 
     if (termo_reference->temperature == manager->reference_temperature &&
         termo_reference->sampling_time == manager->sampling_time) {
-        return TERMO_ERR_OK;
+        // return TERMO_ERR_OK;
     }
 
     if (manager->is_termo_running) {
@@ -196,12 +196,12 @@ static termo_err_t system_manager_termo_measure_handler(
     manager->measure_pressure = termo_measure->pressure;
     manager->measure_temperature = termo_measure->temperature;
 
-    TERMO_LOG(TAG,
-              "New measure: temperature = %.2f, humidity = %.2f, pressure = "
-              "%.2f",
-              termo_measure->temperature,
-              termo_measure->humidity,
-              termo_measure->pressure);
+    // TERMO_LOG(TAG,
+    //           "New measure: temperature = %.2f, humidity = %.2f, pressure = "
+    //           "%.2f",
+    //           termo_measure->temperature,
+    //           termo_measure->humidity,
+    //           termo_measure->pressure);
 
     return TERMO_ERR_OK;
 }

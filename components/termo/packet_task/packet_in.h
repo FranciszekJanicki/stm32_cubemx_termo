@@ -1,6 +1,7 @@
 #ifndef COMMON_PACKET_IN_H
 #define COMMON_PACKET_IN_H
 
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 

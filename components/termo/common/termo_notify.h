@@ -16,7 +16,8 @@ typedef enum {
 } display_notify_t;
 
 typedef enum {
-    PACKET_NOTIFY_ALL = (1 << 0),
+    PACKET_NOTIFY_RX_COMPLETE = (1 << 0),
+    PACKET_NOTIFY_ALL = (PACKET_NOTIFY_RX_COMPLETE),
 } packet_notify_t;
 
 #endif // COMMON_TERMO_NOTIFY_H

@@ -6,6 +6,23 @@
 
 static char const* const TAG = "packet_manager";
 
+static inline bool packet_manager_prepare_packet_out(packet_manager_t* manager,
+                                                     packet_out_t const* packet)
+{
+    TERMO_ASSERT(manager != NULL);
+    TERMO_ASSERT(packet != NULL);
+
+    bool result = packet_out_encode(packet,
+                                    (char*)manager->transmit_buffer,
+                                    sizeof(manager->transmit_buffer));
+
+    if (result) {
+        manager->is_transmit_pending = true;
+    }
+
+    return result;
+}
+
 static inline bool packet_manager_transmit_packet_out(
     packet_manager_t* manager,
     packet_out_t const* packet)
@@ -13,17 +30,36 @@ static inline bool packet_manager_transmit_packet_out(
     TERMO_ASSERT(manager != NULL);
     TERMO_ASSERT(packet != NULL);
 
-    char buffer[100];
-    memset(buffer, 0, sizeof(buffer));
-
-    if (!packet_out_encode(packet, buffer, sizeof(buffer))) {
+    if (!packet_manager_prepare_packet_out(manager, packet)) {
         return false;
     }
 
-    return HAL_UART_Transmit(manager->config.packet_uart_bus,
-                             (uint8_t*)buffer,
-                             strlen(buffer),
-                             HAL_MAX_DELAY) == HAL_OK;
+    HAL_StatusTypeDef err =
+        HAL_UART_Transmit(manager->config.packet_uart_bus,
+                          manager->transmit_buffer,
+                          strlen((char*)manager->transmit_buffer),
+                          HAL_MAX_DELAY);
+
+    memset(manager->transmit_buffer, 0, sizeof(manager->transmit_buffer));
+
+    return err == HAL_OK;
+}
+
+static inline bool packet_manager_parse_packet_in(packet_manager_t* manager,
+                                                  packet_in_t* packet)
+{
+    TERMO_ASSERT(manager != NULL);
+    TERMO_ASSERT(packet != NULL);
+
+    bool result = packet_in_decode((char*)manager->receive_buffer,
+                                   strlen((char*)manager->receive_buffer),
+                                   packet);
+
+    if (result) {
+        manager->is_receive_pending = true;
+    }
+
+    return result;
 }
 
 static inline bool packet_manager_receive_packet_in(packet_manager_t* manager,
@@ -32,43 +68,50 @@ static inline bool packet_manager_receive_packet_in(packet_manager_t* manager,
     TERMO_ASSERT(manager != NULL);
     TERMO_ASSERT(packet != NULL);
 
-    char buffer[100];
-    memset(buffer, 0, sizeof(buffer));
+    memset(manager->receive_buffer, 0, sizeof(manager->receive_buffer));
 
-#ifdef PACKET_IN_TEST
-    snprintf(buffer,
-             sizeof(buffer),
-             "{\"packet_type\":%d,"
-             "\"packet_payload\":{\"temperature\":%f,"
-             "\"sampling_time\":%f}}\n",
-             0,
-             25.0F,
-             0.001F);
+    uint32_t start_tick = HAL_GetTick();
+    uint32_t total_timeout_ms = 10000U;
+    uint32_t inter_byte_timeout_ms = 100U;
 
-    TERMO_LOG(TAG, "packet_in_test: %s", buffer);
-#else
-    uint32_t tick = HAL_GetTick();
     size_t index = 0UL;
-    uint8_t byte;
+    uint8_t byte = 0U;
 
-    while (HAL_GetTick() - tick < 500U) {
-        if (HAL_UART_Receive(manager->config.packet_uart_bus,
-                             &byte,
-                             sizeof(byte),
-                             10U) == HAL_OK) {
-            if (byte == '\n' || index >= sizeof(buffer) - 1UL) {
+    bool got_first_byte = false;
+    uint32_t last_byte_tick = start_tick;
+
+    while (1) {
+        uint32_t now = HAL_GetTick();
+
+        if (!got_first_byte && (now - start_tick >= total_timeout_ms)) {
+            break;
+        }
+
+        if (got_first_byte && (now - last_byte_tick >= inter_byte_timeout_ms)) {
+            break;
+        }
+
+        if (HAL_UART_Receive(manager->config.packet_uart_bus, &byte, 1, 100U) ==
+            HAL_OK) {
+            got_first_byte = true;
+            last_byte_tick = HAL_GetTick();
+
+            if (byte == '\n') {
                 break;
             }
 
-            buffer[index++] = (char)byte;
+            if (index >= (sizeof(manager->receive_buffer) - 1U)) {
+                break;
+            }
+
+            manager->receive_buffer[index++] = byte;
         }
     }
-    buffer[index] = '\0';
-#endif
 
-    TERMO_LOG(TAG, "received: %s", buffer);
+    manager->receive_buffer[index] = '\0';
+    TERMO_LOG(TAG, "received: %s", (char*)manager->receive_buffer);
 
-    return packet_in_decode(buffer, strlen(buffer), packet);
+    return packet_manager_parse_packet_in(manager, packet);
 }
 
 static inline bool packet_manager_send_system_event(system_event_t const* event)
@@ -105,10 +148,26 @@ static inline bool packet_manager_receive_packet_event(packet_event_t* event)
                          pdMS_TO_TICKS(10)) == pdPASS;
 }
 
+static termo_err_t packet_manager_notify_rx_complete_handler(
+    packet_manager_t* manager)
+{
+    TERMO_LOG_FUNC(TAG);
+    TERMO_ASSERT(manager != NULL);
+
+    // HAL_UART_Receive_IT(manager->config.packet_uart_bus,
+    //                     manager->receive_buffer,
+    //                     sizeof(manager->receive_buffer));
+
+    return TERMO_ERR_OK;
+}
+
 static termo_err_t packet_manager_notify_handler(packet_manager_t* manager,
                                                  packet_notify_t notify)
 {
     TERMO_ASSERT(manager != NULL);
+
+    if ((notify & PACKET_NOTIFY_RX_COMPLETE) == PACKET_NOTIFY_RX_COMPLETE) {
+    }
 
     return TERMO_ERR_OK;
 }
@@ -286,7 +345,12 @@ termo_err_t packet_manager_initialize(packet_manager_t* manager,
     TERMO_ASSERT(config != NULL);
 
     manager->is_running = false;
+    manager->is_transmit_pending = false;
+    manager->is_receive_pending = false;
     manager->config = *config;
+
+    memset(manager->transmit_buffer, 0, sizeof(manager->transmit_buffer));
+    memset(manager->receive_buffer, 0, sizeof(manager->receive_buffer));
 
     system_event_t event = {.origin = SYSTEM_EVENT_ORIGIN_PACKET,
                             .type = SYSTEM_EVENT_TYPE_PACKET_READY,

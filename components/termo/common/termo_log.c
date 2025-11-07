@@ -40,7 +40,7 @@ void termo_log(char const* format, ...)
         }
     }
 
-    _write(1, buffer, buffer_len);
+    _write(1, buffer, written_len);
 
     if (used_heap_buffer) {
         free(buffer);

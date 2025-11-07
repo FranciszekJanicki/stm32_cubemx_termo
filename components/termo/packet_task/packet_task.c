@@ -70,3 +70,13 @@ termo_err_t packet_task_initialize(packet_task_ctx_t const* task_ctx)
 
     return TERMO_ERR_OK;
 }
+
+void packet_task_rx_complete_callback(void)
+{
+    BaseType_t task_woken = pdFALSE;
+    xTaskNotifyFromISR(termo_task_manager_get(TERMO_TASK_TYPE_PACKET),
+                       PACKET_NOTIFY_RX_COMPLETE,
+                       eSetBits,
+                       &task_woken);
+    portYIELD_FROM_ISR(task_woken);
+}

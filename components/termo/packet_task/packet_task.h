@@ -10,4 +10,6 @@ typedef struct {
 
 termo_err_t packet_task_initialize(packet_task_ctx_t const* task_ctx);
 
+void packet_task_rx_complete_callback(void);
+
 #endif // PACKET_TASK_PACKET_TASK_H
