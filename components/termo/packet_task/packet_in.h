@@ -11,7 +11,7 @@ typedef enum {
 
 typedef struct {
     float temperature;
-    float sampling_time;
+    float update_time;
 } packet_in_payload_reference_t;
 
 typedef union {

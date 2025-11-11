@@ -12,5 +12,7 @@ typedef struct {
 termo_err_t termo_task_initialize(termo_task_ctx_t const* task_ctx);
 
 void termo_task_delta_timer_callback(void);
+void termo_task_update_timer_callback(void);
+void termo_task_pwm_timer_callback(void);
 
 #endif // TERMO_TASK_TERMO_TASK_H

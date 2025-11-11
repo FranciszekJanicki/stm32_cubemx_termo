@@ -119,16 +119,22 @@ static termo_err_t system_manager_termo_reference_handler(
     TERMO_ASSERT(termo_reference != NULL);
 
     if (termo_reference->temperature == manager->reference_temperature &&
-        termo_reference->sampling_time == manager->sampling_time) {
+        termo_reference->update_time == manager->update_time) {
         // return TERMO_ERR_OK;
+    }
+
+    float temperature = termo_reference->temperature;
+    float update_time = termo_reference->update_time;
+    if (termo_reference->update_time > 1.0F ||
+        termo_reference->update_time < 0.1F) {
+        update_time = manager->update_time;
     }
 
     if (manager->is_termo_running) {
         termo_event_t event = {
             .type = TERMO_EVENT_TYPE_REFERENCE,
-            .payload.reference = {.temperature = termo_reference->temperature,
-                                  .sampling_period =
-                                      termo_reference->sampling_time}};
+            .payload.reference = {.temperature = temperature,
+                                  .update_time = update_time}};
         if (!system_manager_send_termo_event(&event)) {
             return TERMO_ERR_FAIL;
         }
@@ -137,21 +143,15 @@ static termo_err_t system_manager_termo_reference_handler(
     if (manager->is_display_running) {
         display_event_t event = {
             .type = DISPLAY_EVENT_TYPE_REFERENCE,
-            .payload.reference = {.temperature = termo_reference->temperature,
-                                  .sampling_time =
-                                      termo_reference->sampling_time}};
+            .payload.reference = {.temperature = temperature,
+                                  .update_time = update_time}};
         if (!system_manager_send_display_event(&event)) {
             return TERMO_ERR_FAIL;
         }
     }
 
-    manager->reference_temperature = termo_reference->temperature;
-    manager->sampling_time = termo_reference->sampling_time;
-
-    TERMO_LOG(TAG,
-              "New reference: temperature = %.2f, sampling_time = %.2f",
-              termo_reference->temperature,
-              termo_reference->sampling_time);
+    manager->reference_temperature = temperature;
+    manager->update_time = update_time;
 
     return TERMO_ERR_OK;
 }
@@ -389,15 +389,17 @@ termo_err_t system_manager_initialize(system_manager_t* manager,
     TERMO_ASSERT(manager != NULL);
     TERMO_ASSERT(config != NULL);
 
-    manager->config = *config;
     manager->is_termo_running = false;
     manager->is_display_running = false;
     manager->is_packet_running = false;
+
     manager->reference_temperature = 0.0F;
     manager->measure_temperature = 0.0F;
     manager->measure_humidity = 0.0F;
     manager->measure_pressure = 0.0F;
-    manager->sampling_time = 0.0F;
+    manager->update_time = 0.0F;
+
+    manager->config = *config;
 
     return TERMO_ERR_OK;
 }

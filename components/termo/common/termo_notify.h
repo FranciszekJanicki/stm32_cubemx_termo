@@ -6,9 +6,11 @@ typedef enum {
 } system_notify_t;
 
 typedef enum {
-    TERMO_NOTIFY_TEMP_READY = (1 << 0),
+    TERMO_NOTIFY_UPDATE_TIMER = (1 << 0),
     TERMO_NOTIFY_DELTA_TIMER = (1 << 1),
-    TERMO_NOTIFY_ALL = (TERMO_NOTIFY_TEMP_READY | TERMO_NOTIFY_DELTA_TIMER),
+    TERMO_NOTIFY_PWM_TIMER = (1 << 2),
+    TERMO_NOTIFY_ALL = (TERMO_NOTIFY_UPDATE_TIMER | TERMO_NOTIFY_DELTA_TIMER |
+                        TERMO_NOTIFY_PWM_TIMER),
 } termo_notify_t;
 
 typedef enum {

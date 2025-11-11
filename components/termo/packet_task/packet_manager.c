@@ -287,7 +287,7 @@ static termo_err_t packet_manager_packet_in_reference_handler(
         .origin = SYSTEM_EVENT_ORIGIN_PACKET,
         .type = SYSTEM_EVENT_TYPE_TERMO_REFERENCE,
         .payload.termo_reference = {.temperature = reference->temperature,
-                                    .sampling_time = reference->sampling_time}};
+                                    .update_time = reference->update_time}};
     if (!packet_manager_send_system_event(&event)) {
         return TERMO_ERR_FAIL;
     }

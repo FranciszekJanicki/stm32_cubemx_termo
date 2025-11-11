@@ -203,7 +203,7 @@ static termo_err_t display_manager_event_reference_handler(
     TERMO_ASSERT(reference != NULL);
 
     manager->reference_temperature = reference->temperature;
-    manager->sampling_time = reference->sampling_time;
+    manager->update_time = reference->update_time;
 
     sh1107_draw_string_formatted(&manager->sh1107,
                                  0,
@@ -217,8 +217,8 @@ static termo_err_t display_manager_event_reference_handler(
     sh1107_draw_string_formatted(&manager->sh1107,
                                  0,
                                  3 * FONT5X7_LINE_HEIGHT,
-                                 "-sampling_time: %.2f [s]",
-                                 manager->sampling_time);
+                                 "-update_time: %.2f [s]",
+                                 manager->update_time);
 
     sh1107_display_frame_buffer(&manager->sh1107);
 

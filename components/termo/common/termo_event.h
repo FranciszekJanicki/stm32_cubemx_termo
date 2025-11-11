@@ -32,7 +32,7 @@ typedef struct {
 
 typedef struct {
     float temperature;
-    float sampling_time;
+    float update_time;
 } system_event_payload_termo_reference_t;
 
 typedef struct {
@@ -93,7 +93,7 @@ typedef struct {
 
 typedef struct {
     float temperature;
-    float sampling_period;
+    float update_time;
 } termo_event_payload_reference_t;
 
 typedef union {
@@ -127,7 +127,7 @@ typedef struct {
 } display_event_payload_measure_t;
 
 typedef struct {
-    float sampling_time;
+    float update_time;
     float temperature;
 } display_event_payload_reference_t;
 

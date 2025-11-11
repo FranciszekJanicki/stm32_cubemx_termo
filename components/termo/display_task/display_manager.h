@@ -26,7 +26,7 @@ typedef struct {
     uint8_t sh1107_frame_buffer[SH1107_FRAME_BUFFER_SIZE];
 
     float reference_temperature;
-    float sampling_time;
+    float update_time;
 
     float measure_temperature;
     float measure_pressure;

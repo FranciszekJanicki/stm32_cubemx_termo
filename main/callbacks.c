@@ -6,10 +6,19 @@
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef* htim)
 {
-    if (htim->Instance == TIM1) {
+    if (htim->Instance == SYSTICK_TIMER->Instance) {
         HAL_IncTick();
-    } else if (htim->Instance == TIM2) {
+    } else if (htim->Instance == DELTA_TIMER->Instance) {
         termo_task_delta_timer_callback();
+    } else if (htim->Instance == UPDATE_TIMER->Instance) {
+        termo_task_update_timer_callback();
+    }
+}
+
+void HAL_TIM_PWM_PulseFinishedCallback(TIM_HandleTypeDef* htim)
+{
+    if (htim->Instance == PWM_TIMER->Instance) {
+        termo_task_pwm_timer_callback();
     }
 }
 

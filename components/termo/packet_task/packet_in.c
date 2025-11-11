@@ -23,12 +23,12 @@ static inline void packet_in_payload_reference_encode(
     buffer[2] = (temperature >> 8U) & 0xFFU;
     buffer[3] = temperature & 0xFFU;
 
-    uint32_t sampling_time;
-    memcpy(&sampling_time, &reference->sampling_time, sizeof(sampling_time));
-    buffer[4] = (sampling_time >> 24U) & 0xFFU;
-    buffer[5] = (sampling_time >> 16U) & 0xFFU;
-    buffer[6] = (sampling_time >> 8U) & 0xFFU;
-    buffer[7] = sampling_time & 0xFFU;
+    uint32_t update_time;
+    memcpy(&update_time, &reference->update_time, sizeof(update_time));
+    buffer[4] = (update_time >> 24U) & 0xFFU;
+    buffer[5] = (update_time >> 16U) & 0xFFU;
+    buffer[6] = (update_time >> 8U) & 0xFFU;
+    buffer[7] = update_time & 0xFFU;
 }
 
 static inline void packet_in_payload_encode(packet_in_type_t type,
@@ -80,12 +80,12 @@ static inline void packet_in_payload_reference_decode(
            &temperature,
            sizeof(reference->temperature));
 
-    uint32_t sampling_time = ((buffer[4] & 0xFFU) << 24U) |
-                             ((buffer[5] & 0xFFU) << 16U) |
-                             ((buffer[6] & 0xFFU) << 8U) | (buffer[7] & 0xFFU);
-    memcpy(&reference->sampling_time,
-           &sampling_time,
-           sizeof(reference->sampling_time));
+    uint32_t update_time = ((buffer[4] & 0xFFU) << 24U) |
+                           ((buffer[5] & 0xFFU) << 16U) |
+                           ((buffer[6] & 0xFFU) << 8U) | (buffer[7] & 0xFFU);
+    memcpy(&reference->update_time,
+           &update_time,
+           sizeof(reference->update_time));
 }
 
 static inline void packet_in_payload_decode(uint8_t const* buffer,
@@ -136,10 +136,10 @@ bool packet_in_encode(packet_in_t const* packet,
                                "{\"packet_type\": %d,"
                                "\"packet_payload\": {"
                                "\"temperature\": %f,"
-                               "\"sampling_time\": %f}}\n",
+                               "\"update_time\": %f}}\n",
                                packet->type,
                                packet->payload.reference.temperature,
-                               packet->payload.reference.sampling_time);
+                               packet->payload.reference.update_time);
     }
 
     if (written_len < 0 || (size_t)written_len >= buffer_len) {
@@ -201,19 +201,19 @@ bool packet_in_decode(char const* buffer,
 
         packet->payload.reference.temperature = temperature;
 
-        str = strstr(buffer, "\"sampling_time\"");
+        str = strstr(buffer, "\"update_time\"");
         if (str == NULL) {
             return false;
         }
 
-        float sampling_time = 0.0F;
-        // scanned_num = sscanf(str, "\"sampling_time\": %f", &sampling_time);
+        float update_time = 0.0F;
+        // scanned_num = sscanf(str, "\"update_time\": %f", &update_time);
         // if (scanned_num != 1) {
         //       return false;
         // }
-        sampling_time = parse_float_field(str, "sampling_time");
+        update_time = parse_float_field(str, "update_time");
 
-        packet->payload.reference.sampling_time = sampling_time;
+        packet->payload.reference.update_time = update_time;
     }
 
     return true;

@@ -76,11 +76,24 @@ void termo_task_delta_timer_callback(void)
 {
     BaseType_t task_woken = pdFALSE;
     xTaskNotifyFromISR(termo_task_manager_get(TERMO_TASK_TYPE_TERMO),
-                       TERMO_NOTIFY_DELTA_TIMER | TERMO_NOTIFY_TEMP_READY,
+                       TERMO_NOTIFY_DELTA_TIMER,
                        eSetBits,
                        &task_woken);
     portYIELD_FROM_ISR(task_woken);
 }
+
+void termo_task_update_timer_callback(void)
+{
+    BaseType_t task_woken = pdFALSE;
+    xTaskNotifyFromISR(termo_task_manager_get(TERMO_TASK_TYPE_TERMO),
+                       TERMO_NOTIFY_UPDATE_TIMER,
+                       eSetBits,
+                       &task_woken);
+    portYIELD_FROM_ISR(task_woken);
+}
+
+void termo_task_pwm_timer_callback(void)
+{}
 
 #undef TERMO_TASK_STACK_DEPTH
 #undef TERMO_TASK_NAME
