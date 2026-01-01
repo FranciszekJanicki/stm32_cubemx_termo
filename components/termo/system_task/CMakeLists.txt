@@ -7,7 +7,7 @@ target_sources(system_task PRIVATE
 
 target_link_libraries(system_task PUBLIC
     common
-    stm32cubemx
+    cubemx
 )
 
 target_include_directories(system_task PUBLIC

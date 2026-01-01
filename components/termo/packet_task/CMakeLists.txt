@@ -1,15 +1,16 @@
+add_subdirectory(packet_utility)
+
 add_library(packet_task STATIC)
 
 target_sources(packet_task PRIVATE 
-    packet_in.c
-    packet_out.c
     packet_task.c
     packet_manager.c
 )
 
 target_link_libraries(packet_task PUBLIC
     common
-    stm32cubemx
+    cubemx
+    packet_utility
 )
 
 target_include_directories(packet_task PUBLIC

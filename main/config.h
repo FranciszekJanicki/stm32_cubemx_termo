@@ -22,7 +22,7 @@ extern TIM_HandleTypeDef htim1;
 #define PWM_CHANNEL (TIM_CHANNEL_1)
 
 #define PROP_GAIN (100.0F)
-#define INT_GAIN (0.F)
+#define INT_GAIN (0.0F)
 #define DOT_GAIN (0.0F)
 #define SAT_GAIN (0.0F)
 #define MIN_TEMP (25.0F)

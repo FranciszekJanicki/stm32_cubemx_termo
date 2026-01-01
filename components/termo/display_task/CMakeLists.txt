@@ -9,7 +9,7 @@ target_sources(display_task PRIVATE
 
 target_link_libraries(display_task PUBLIC
     common
-    stm32cubemx
+    cubemx
     sh1107
     display_utility
 )

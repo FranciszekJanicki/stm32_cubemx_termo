@@ -1,22 +1,20 @@
-add_library(termo_task STATIC)
+add_library(packet_utility STATIC)
 
-target_sources(termo_task PRIVATE 
-    termo_manager.c
-    termo_task.c
+target_sources(packet_utility PRIVATE 
+    packet_in.c
+    packet_out.c
 )
 
-target_include_directories(termo_task PUBLIC
-    ${CMAKE_CURRENT_SOURCE_DIR}
-)
-
-target_link_libraries(termo_task PUBLIC
+target_link_libraries(packet_utility PUBLIC
     common
-    mcp9808
-    pid_regulator
     cubemx
 )
 
-target_compile_options(termo_task PUBLIC
+target_include_directories(packet_utility PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+target_compile_options(packet_utility PUBLIC
     -std=c23
     -Wall
     -Wextra

@@ -12,7 +12,7 @@ target_include_directories(common PUBLIC
 
 target_link_libraries(common PUBLIC
     handle_manager
-    stm32cubemx
+    cubemx
 )
 
 target_compile_options(common PRIVATE
